@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 	}
 }
 
-$query .= "ORDER BY `session_id`, `vti.id`";
+$query .= "ORDER BY session_id, vti.id";
 
 ?>
 
