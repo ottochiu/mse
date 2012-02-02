@@ -9,7 +9,7 @@ mysql_connect($server, $user, $password) or die("Cannot connect to localhost");
 mysql_select_db($database) or die("Cannot select database");
 
 // A form has been submitted. Query database with input.
-$query = "SELECT * FROM mse_heartrate_interval AS vti LEFT JOIN mse_heartrate_session AS session ON session_id = session.id ";
+$query = "SELECT * FROM `mse_heartrate_interval` AS `vti` LEFT JOIN `mse_heartrate_session` AS `session` ON session_id = session.id ";
 $id = 0;
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 	}
 }
 
-$query .= "ORDER BY session_id, vti.id";
+$query .= "ORDER BY `session_id`, `vti.id`";
 
 ?>
 
