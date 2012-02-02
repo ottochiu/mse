@@ -9,7 +9,7 @@ mysql_connect($server, $user, $password) or die("Cannot connect to localhost");
 mysql_select_db($database) or die("Cannot select database");
 
 // A form has been submitted. Query database with input.
-$query = "SELECT * FROM mse_heartrate_interval ";
+$query = "SELECT * FROM mse_heartrate_interval AS vti LEFT JOIN mse_heartrate_session AS session ON session_id = session.id ";
 $id = 0;
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -20,9 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 		$id = $val;
 
 		// Has been validated to be an int. Don't need to escape
-		$query .= sprintf(" WHERE session_id=%d ORDER BY id", $id);
+		$query .= sprintf("WHERE session_id=%d ", $id);
 	}
 }
+
+$query .= "ORDER BY session_id, vti.id";
 
 ?>
 
@@ -48,23 +50,22 @@ if (!$result || mysql_num_rows($result) == 0) {
 	echo "Record not found.";
 } else {
 
-	// Fetch session data
-	($session = mysql_query("SELECT start_time FROM mse_heartrate_session WHERE id = $id")) and mysql_num_rows($session) > 0 or die("Inconsistent database.".mysql_num_rows($session));
-
-	echo "Session record start time: ". mysql_result($session, 0);
-	
 ?>
 
-<table border="0" cellspacing="1" cellpadding="1">
+<table border="1" cellspacing="0" cellpadding="2">
 <tr>
+	<td>Session #</td>
 	<td>Heartbeat interval</td>
+	<td>Session start time</td>
 </tr>
 
 
 <?php
 while ($row = mysql_fetch_assoc($result)) {
 	echo "<tr>\n";
+	printf("<td>%d</td>\n", $row['session_id']);
 	printf("<td>%d</td>\n", $row['interval']);
+	printf("<td>%s</td>\n", $row['start_time']);
 	echo "</tr>\n";
 }
 ?>
@@ -79,4 +80,5 @@ while ($row = mysql_fetch_assoc($result)) {
 
 </body>
 </html>
+
 
