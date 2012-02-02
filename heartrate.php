@@ -10,6 +10,7 @@ mysql_select_db($database) or die("Cannot select database");
 
 // A form has been submitted. Query database with input.
 $query = "SELECT * FROM mse_heartrate_interval ";
+$id = 0;
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -34,7 +35,7 @@ echo $query;
 
 <form method="post" action="heartrate.php">
 
-  Please enter record number (0 to view all): <input type="text" size="3" name="record_number" value="/>
+  Please enter record number (0 to view all): <input type="text" size="3" name="record_number" value="$id"/>
   <br />
   <input type="submit">
 </form>
