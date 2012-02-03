@@ -5,34 +5,84 @@
     android:layout_height="fill_parent"
     android:orientation="horizontal" >
 
-    <TextView android:text="TextView"
-        android:id="@+id/intervalDisplay"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_weight="0.38"
-        android:width="100sp" />
+        android:layout_alignParentLeft="true" >
 
-    <Button
-        android:id="@+id/beatButton"
-        android:layout_width="wrap_content"
-        android:layout_height="105dp"
-        android:layout_alignParentLeft="true"
-        android:layout_centerVertical="true"
-        android:layout_marginLeft="56dp"
-        android:text="Beat"
-        android:width="100sp" />
-
-    <ToggleButton
-        android:id="@+id/beatToggle"
+        <TextView
+            android:id="@+id/sessionStarted"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Session started: "
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/startTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/beatButton"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true" >
+
+        <TextView
+            android:id="@+id/intervalDisplay"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:typeface="monospace"
+            android:width="100sp"/>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/linearLayout1"
+        android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:layout_alignRight="@+id/beatButton"
-        android:layout_marginTop="66dp"
-        android:text="ToggleButton" />
+        android:layout_toLeftOf="@+id/scrollView"
+        android:gravity="center"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/linearLayout4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:gravity="center"
+            android:orientation="vertical" >
+
+            <ToggleButton
+                android:id="@+id/beatToggle"
+                android:layout_width="100sp"
+                android:layout_height="100sp"
+                android:onClick="toggleUpdate"
+                android:text="ToggleButton" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/linearLayout3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:gravity="center" >
+
+            <Button
+                android:id="@+id/beatButton"
+                android:layout_width="100sp"
+                android:layout_height="100sp"
+                android:onClick="beat"
+                android:text="Beat"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+    </LinearLayout>
 
 </RelativeLayout>
