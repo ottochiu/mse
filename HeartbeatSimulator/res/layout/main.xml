@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/RelativeLayout1"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal" >
+
+    <TextView android:text="TextView"
+        android:id="@+id/intervalDisplay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_weight="0.38"
+        android:width="100sp" />
+
+    <Button
+        android:id="@+id/beatButton"
+        android:layout_width="wrap_content"
+        android:layout_height="105dp"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="56dp"
+        android:text="Beat"
+        android:width="100sp" />
+
+    <ToggleButton
+        android:id="@+id/beatToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/beatButton"
+        android:layout_alignParentTop="true"
+        android:layout_alignRight="@+id/beatButton"
+        android:layout_marginTop="66dp"
+        android:text="ToggleButton" />
+
+</RelativeLayout>
