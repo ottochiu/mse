@@ -2,8 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/RelativeLayout1"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="horizontal" >
+    android:layout_height="fill_parent">
 
     <LinearLayout
         android:id="@+id/linearLayout1"
@@ -62,7 +61,7 @@
             <ToggleButton
                 android:id="@+id/beatToggle"
                 android:layout_width="100sp"
-                android:layout_height="100sp"
+                android:layout_height="wrap_content"
                 android:onClick="toggleUpdate"
                 android:text="ToggleButton" />
         </LinearLayout>
@@ -77,12 +76,12 @@
             <Button
                 android:id="@+id/beatButton"
                 android:layout_width="100sp"
-                android:layout_height="100sp"
+                android:layout_height="wrap_content"
                 android:onClick="beat"
                 android:text="Beat"
                 android:visibility="invisible" />
         </LinearLayout>
-
+        
     </LinearLayout>
 
 </RelativeLayout>
