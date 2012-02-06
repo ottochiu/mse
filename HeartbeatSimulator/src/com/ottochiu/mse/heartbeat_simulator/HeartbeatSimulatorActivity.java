@@ -57,7 +57,7 @@ public class HeartbeatSimulatorActivity extends Activity {
 	// Responsible for sending data
 	DataSender mSender;
 
-	private static final int REQUEST_ENABLE_BT = 1;
+	private static final int REQUEST_BT_DISCOVERABLE = 1;
 	
 	
     /** Called when the activity is first created. */
@@ -88,7 +88,7 @@ public class HeartbeatSimulatorActivity extends Activity {
     
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	// Check for the correct intent
-    	if (requestCode == REQUEST_ENABLE_BT) {
+    	if (requestCode == REQUEST_BT_DISCOVERABLE) {
     		if (resultCode == Activity.RESULT_OK) {
     			createBluetoothSender();
     		} else {
@@ -154,8 +154,8 @@ public class HeartbeatSimulatorActivity extends Activity {
     	try {
     		if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
 
-    			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-    			startActivityForResult(enableBtIntent, 	REQUEST_ENABLE_BT);
+    			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+    			startActivityForResult(discoverableIntent, 	REQUEST_BT_DISCOVERABLE);
 
     		} else {
     			createBluetoothSender();
