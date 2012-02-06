@@ -54,7 +54,7 @@ public class HeartbeatSimulatorActivity extends Activity {
 	// Time of previous beat
 	long mBeatTime;
 
-	static DataSender mSender;
+	DataSender mSender;
 
 	private static final int REQUEST_ENABLE_BT = 1;
 	
@@ -72,10 +72,12 @@ public class HeartbeatSimulatorActivity extends Activity {
         mStartTime = (TextView) findViewById(R.id.startTime);
         mScrollView = (ScrollView) findViewById(R.id.scrollView);
 
-        // Avoid repeated BT permissions request once the user has decided.
-        if (mSender == null) {
-        	detectBluetooth();
-        }
+        detectBluetooth();
+    }
+    
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+    	return mSender;
     }
     
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -168,7 +170,7 @@ public class HeartbeatSimulatorActivity extends Activity {
 		String startTime = mStartTime.getText().toString();
 		mStartTime.setText("Sending data...");
 
-		mSender.sendInBackground(startTime);
+		mSender.sendInBackground(startTime, mIntervals);
     }
     
     private void createHttpSender() {
@@ -183,13 +185,13 @@ public class HeartbeatSimulatorActivity extends Activity {
     /////////////////////////////////
     // Data Sender
 
-    private abstract class DataSender extends AsyncTask<String, Void, String> {
+    private abstract class DataSender extends AsyncTask<Object, Void, String> {
 
     	// data[0] = timestamp
     	// data[1] = Intervals formatted in the same way as they appear in the TextView box.
-    	protected String doInBackground(String... strings) {
+    	protected String doInBackground(Object... data) {
     		// mIntervals is safe because the toggle is disabled and therefore cannot be emptied.
-    		return send(strings[0], mIntervals);
+    		return send((String) data[0], (List<Long>) data[1]);
         }
 
         protected void onPostExecute(String result) {
@@ -198,7 +200,7 @@ public class HeartbeatSimulatorActivity extends Activity {
         	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         }
 
-        abstract void sendInBackground(String timestamp);
+        abstract void sendInBackground(String timestamp, List<Long> intervals);
     	abstract protected String send(String timestamp, List<Long> intervals);
     }    	
 
@@ -215,11 +217,11 @@ public class HeartbeatSimulatorActivity extends Activity {
     	}
     	
     	@Override
-    	protected void sendInBackground(String timestamp) {
-    		// a convoluated way of starting an async task. In order to call this method there needs to
+    	void sendInBackground(String timestamp, List<Long> intervals) {
+    		// a convoluted way of starting an async task. In order to call this method there needs to
     		// be an existing instance of HttpDataSender already. This instance is created by the activity
     		// when it determines whether to send using Bluetooth or HTTP.
-    		new HttpDataSender(mClient, mPost).execute(timestamp);
+    		new HttpDataSender(mClient, mPost).execute(timestamp, intervals);
     	}
         
     	@Override
@@ -259,11 +261,11 @@ public class HeartbeatSimulatorActivity extends Activity {
     class BluetoothDataSender extends DataSender {
 
     	@Override
-    	protected void sendInBackground(String timestamp) {
-    		// a convoluated way of starting an async task. In order to call this method there needs to
+    	void sendInBackground(String timestamp, List<Long> intervals) {
+    		// a convoluted way of starting an async task. In order to call this method there needs to
     		// be an existing instance of BluetoothDataSender already. This instance is created by the activity
     		// when it determines whether to send using Bluetooth or HTTP.
-    		new BluetoothDataSender().execute(timestamp);
+    		new BluetoothDataSender().execute(timestamp, intervals);
     	}
     	
     	
