@@ -15,8 +15,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
@@ -57,9 +55,6 @@ public class HeartbeatSimulatorActivity extends Activity {
 	// Responsible for sending data
 	DataSender mSender;
 
-	private static final int REQUEST_BT_DISCOVERABLE = 1;
-	
-	
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -77,24 +72,14 @@ public class HeartbeatSimulatorActivity extends Activity {
         
         // If first time rendering the activity
         if (mSender == null) {
-        	detectBluetooth();
+        	// default to no Bluetooth if intent does not include the option name
+        	createSender(getIntent().getBooleanExtra(getString(R.string.use_bluetooth_connection), false));
         }
     }
     
     @Override
     public Object onRetainNonConfigurationInstance() {
         return mSender;
-    }
-    
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	// Check for the correct intent
-    	if (requestCode == REQUEST_BT_DISCOVERABLE) {
-    		if (resultCode == Activity.RESULT_OK) {
-    			createBluetoothSender();
-    		} else {
-    			createHttpSender();
-    		}
-    	}
     }
     
     
@@ -149,21 +134,9 @@ public class HeartbeatSimulatorActivity extends Activity {
     }
     
     
-    public void detectBluetooth() {
-    	// Determine whether Bluetooth capability is enabled
-    	try {
-    		if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-
-    			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-    			startActivityForResult(discoverableIntent, 	REQUEST_BT_DISCOVERABLE);
-
-    		} else {
-    			createBluetoothSender();
-    		}
-
-    	} catch (NullPointerException e) {
-    		createHttpSender();
-    	}
+    public void createSender(boolean useBluetooth) {
+    	mSender = useBluetooth ? 
+    			new BluetoothDataSender() : new HttpDataSender(getString(R.string.url));
     }
     
     /// Sends interval data and clear the intervals list.
@@ -179,15 +152,6 @@ public class HeartbeatSimulatorActivity extends Activity {
 
 		new SenderTask(mSender, startTime, mIntervals).execute();
     }
-    
-    private void createHttpSender() {
-    	mSender = new HttpDataSender(getString(R.string.url));
-    }
-    
-    private void createBluetoothSender() {
-    	mSender = new BluetoothDataSender();
-    }
-    
     
     /////////////////////////////////
     // Data Sender
