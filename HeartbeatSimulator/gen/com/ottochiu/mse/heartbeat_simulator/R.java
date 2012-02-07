@@ -18,6 +18,7 @@ public final class R {
         public static final int beatButton=0x7f05000a;
         public static final int beatToggle=0x7f050008;
         public static final int bluetoothOption=0x7f05000d;
+        public static final int bluetoothStatus=0x7f05000e;
         public static final int connectionOption=0x7f05000b;
         public static final int httpOption=0x7f05000c;
         public static final int intervalDisplay=0x7f050005;
@@ -37,7 +38,9 @@ public final class R {
         public static final int app_name=0x7f040000;
         public static final int connection_option=0x7f040002;
         public static final int heartbeat_simulator=0x7f040003;
+        public static final int server_name=0x7f040005;
         public static final int url=0x7f040001;
         public static final int use_bluetooth_connection=0x7f040004;
+        public static final int uuid=0x7f040006;
     }
 }

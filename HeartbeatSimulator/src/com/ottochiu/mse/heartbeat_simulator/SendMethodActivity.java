@@ -1,26 +1,91 @@
 package com.ottochiu.mse.heartbeat_simulator;
 
+import java.io.IOError;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.util.UUID;
+
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.RadioGroup;
+import android.widget.TextView;
 
 public class SendMethodActivity extends Activity {
 	private static final String TAG = "SendMethodActivity";
 	private static final int REQUEST_BT_ENABLE = 1;
 	
+	private TextView mBtStatus = null;
+	private RadioGroup mConnectionGroup; 
+	private BluetoothAdapter mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+	
+	// Create a BroadcastReceiver for ACTION_FOUND
+	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+	    public void onReceive(Context context, Intent intent) {
 
-	public void onCreate(Bundle savedInstanceState) {
+        	String action = intent.getAction();
+
+	        // When discovery finds a device
+	        if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+	            // Get the BluetoothDevice object from the Intent
+	            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+	            // Add the name and address to an array adapter to show in a ListView
+	            updateStatus("Discovered " + device.getName() + " @ " + device.getAddress());
+	            
+	    		if (device.getName().equals(getString(R.string.server_name))) {
+	    			updateStatus("Server found.");
+	    			unregisterReceiver(mReceiver);
+	    			startConnection(device);	
+	    		}
+	        } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+	        	// Discovery finished.
+	        	updateStatus("Bluetooth discovery finished.");
+	        	
+	        	// Only make the options visible again when the BT device is null.
+	        	// Otherwise, the activity may be opening a connection.
+	        	if (SimulatorApplication.getApplication(SendMethodActivity.this).getDevice() == null) {
+	        		unregisterReceiver(mReceiver);
+	        		mConnectionGroup.setVisibility(View.VISIBLE);
+	        	}
+            }
+	    }
+	};
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.options);
+
+		mConnectionGroup = (RadioGroup) findViewById(R.id.connectionOption);
+		mConnectionGroup.setVisibility(View.VISIBLE);
 		
-		// Bluetooth not supported
-		if (BluetoothAdapter.getDefaultAdapter() == null) {
-			findViewById(R.id.bluetoothOption).setEnabled(false);
+		// Bluetooth supported
+		if (BluetoothAdapter.getDefaultAdapter() != null) {
+			findViewById(R.id.bluetoothOption).setEnabled(true);
+			SimulatorApplication.getApplication(this).setDevice(null);
 		}
 	}
+	
+	@Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // Make sure we are not doing discovery anymore
+        if (mBtAdapter != null) {
+            mBtAdapter.cancelDiscovery();
+        }
+
+        unregisterReceiver(mReceiver);
+    }
 	
 	public void useHttp(View v) {
 		simulatorActivity(false);
@@ -29,20 +94,26 @@ public class SendMethodActivity extends Activity {
 	public void useBluetooth(View v) {
 		// Determine whether Bluetooth capability is enabled
     	try {
+    		mBtStatus = (TextView) findViewById(R.id.bluetoothStatus);
+    		mConnectionGroup.setVisibility(View.INVISIBLE); // hide the button while processing Bluetooth connection.
+    		
     		// If BT not enabled (BT adapter should not be null. Taken care of in onCreate().)
-    		if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+    		if (!mBtAdapter.isEnabled()) {
 
+    			updateStatus("Enabling Bluetooth...");
+    			
     			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
     			startActivityForResult(discoverableIntent, 	REQUEST_BT_ENABLE);
 
     		} else {
+    			updateStatus("Bluetooth enabled.");
     			choosePairing();
     		}
 
     	} catch (NullPointerException e) {
-    		// should not happen. disable view again
     		Log.wtf(TAG, "NullPointerException in useBluetooth()");
-    		v.setEnabled(false);
+    		v.setEnabled(false); // should not happen. disable view again
+    		mConnectionGroup.setVisibility(View.VISIBLE); // allows user to try again
     	}
 	}
 	
@@ -51,20 +122,118 @@ public class SendMethodActivity extends Activity {
     	// Check for the correct intent
     	if (requestCode == REQUEST_BT_ENABLE) {
     		if (resultCode == Activity.RESULT_OK) {
+    			updateStatus("Bluetooth enabled.");
     			choosePairing();
+    		} else {
+    			updateStatus("Bluetooth NOT enabled.");
+    			mConnectionGroup.setVisibility(View.VISIBLE);
     		}
     	}
     }
     
     
     private void choosePairing() {
-    	// TODO: check for connected devices
-    	// if none match name of server, then make device discoverable.
+    	// Set a descriptive name for this device
+    	mBtAdapter.setName("Heartbeat Simulator");
+    	
+    	// First check if the server is connected already.
+    	for (BluetoothDevice device : mBtAdapter.getBondedDevices()) {
+    		updateStatus("Bonded device: " + device.getName());
+    		
+    		if (device.getName().equals(getString(R.string.server_name))) {
+    			updateStatus("Server found.");
+    			startConnection(device);
+    			return;
+    		}
+    	}
+
+		// server has not been paired before. attempt to discover it.
+    	updateStatus("Discovering server.");
+    	
+    	// Restart discovery.
+    	if (mBtAdapter.isDiscovering()) {
+    		mBtAdapter.cancelDiscovery();
+    	}
+    	
+		// Register the BroadcastReceiver.
+		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		registerReceiver(mReceiver, filter); // Unregistered in callback
+		
+        // Register for broadcasts when discovery has finished
+        filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        registerReceiver(mReceiver, filter);
+		
+		mBtAdapter.startDiscovery();
+	}
+    
+    private void startConnection(BluetoothDevice device) {
+    	updateStatus("Connecting to server.");
+		
+		mBtAdapter.cancelDiscovery();
+
+		try {
+			new ConnectTask(SimulatorApplication.getApplication(this), device).execute();
+		} catch (IOException e) {
+			updateStatus("Bluetooth connection failed.");
+			mConnectionGroup.setVisibility(View.VISIBLE);
+		}
     }
     
     private void simulatorActivity(boolean isBluetoothEnabled) {
     	Intent intent = new Intent(getApplicationContext(), HeartbeatSimulatorActivity.class);
 		intent.putExtra(getString(R.string.use_bluetooth_connection), isBluetoothEnabled);
         startActivity(intent);	
+    }
+    
+    
+    private void updateStatus(String msg) {
+    	mBtStatus.append(msg + "\n");
+    }
+    
+    
+    
+    private class ConnectTask extends AsyncTask<Void, Void, Boolean> {
+
+    	ConnectTask(SimulatorApplication app, BluetoothDevice device) throws IOException {
+    		mApp = app;
+    		
+    		// This is the device to use for the rest of the application.
+    		mApp.setDevice(device);
+    		
+    		mApp.setSocket(mApp.getDevice().createRfcommSocketToServiceRecord(
+    				UUID.fromString(getString(R.string.uuid))));
+    	}
+    	
+    	
+		@Override
+		protected Boolean doInBackground(Void... params) {
+			
+			try {
+				mApp.getSocket().connect();
+				return Boolean.TRUE;
+				
+			} catch (IOException e) {
+				try {
+					mApp.getSocket().close();
+				} catch (IOException e1) { }
+				
+				return Boolean.FALSE;
+			}
+		}
+		
+		protected void onPostExecute(Boolean status) {
+			// connection succeeded
+			if (status.booleanValue()) {
+				// move on to the next activity.
+				updateStatus("Bluetooth connection succeeded.");
+				simulatorActivity(true);
+			} else {
+				updateStatus("Bluetooth connection failed.");
+				mConnectionGroup.setVisibility(View.VISIBLE);
+			}
+		}
+		
+		
+		private final SimulatorApplication mApp;    	
     }
 }
