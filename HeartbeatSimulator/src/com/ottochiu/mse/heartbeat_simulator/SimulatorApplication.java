@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothSocket;
 public class SimulatorApplication extends Application {
 	private BluetoothDevice mDevice;
 	private BluetoothSocket mSocket;
+	private DataSender mSender;
 	
 	static SimulatorApplication getApplication(Activity a) {
 		return (SimulatorApplication) a.getApplication();
@@ -27,5 +28,13 @@ public class SimulatorApplication extends Application {
 	
 	BluetoothSocket getSocket() {
 		return mSocket;
+	}
+	
+	void setSender(boolean useBluetooth) {
+		mSender = useBluetooth ? new BluetoothDataSender() : new HttpDataSender(getString(R.string.url));
+	}
+	
+	DataSender getSender() {
+		return mSender;
 	}
 }

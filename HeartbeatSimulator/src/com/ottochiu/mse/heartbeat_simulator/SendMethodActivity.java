@@ -1,18 +1,17 @@
 package com.ottochiu.mse.heartbeat_simulator;
 
-import java.io.IOError;
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -73,18 +72,24 @@ public class SendMethodActivity extends Activity {
 			findViewById(R.id.bluetoothOption).setEnabled(true);
 			SimulatorApplication.getApplication(this).setDevice(null);
 		}
+		
+    	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
 	}
 	
 	@Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStop() {
+        super.onStop();
 
         // Make sure we are not doing discovery anymore
         if (mBtAdapter != null) {
             mBtAdapter.cancelDiscovery();
         }
 
-        unregisterReceiver(mReceiver);
+        try {
+        	unregisterReceiver(mReceiver);
+        } catch (IllegalArgumentException e) {
+        	// ignored. means receiver not registered.
+        }
     }
 	
 	public void useHttp(View v) {
@@ -94,9 +99,16 @@ public class SendMethodActivity extends Activity {
 	public void useBluetooth(View v) {
 		// Determine whether Bluetooth capability is enabled
     	try {
+    		// Disable orientation change at this point. Otherwise BT process may get interrupted.
+            setRequestedOrientation(
+            		getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ?
+            				ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT :
+            					ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                                    
+                                    
     		mBtStatus = (TextView) findViewById(R.id.bluetoothStatus);
     		mConnectionGroup.setVisibility(View.INVISIBLE); // hide the button while processing Bluetooth connection.
-    		
+
     		// If BT not enabled (BT adapter should not be null. Taken care of in onCreate().)
     		if (!mBtAdapter.isEnabled()) {
 
@@ -180,8 +192,8 @@ public class SendMethodActivity extends Activity {
     }
     
     private void simulatorActivity(boolean isBluetoothEnabled) {
+    	SimulatorApplication.getApplication(this).setSender(isBluetoothEnabled);
     	Intent intent = new Intent(getApplicationContext(), HeartbeatSimulatorActivity.class);
-		intent.putExtra(getString(R.string.use_bluetooth_connection), isBluetoothEnabled);
         startActivity(intent);	
     }
     

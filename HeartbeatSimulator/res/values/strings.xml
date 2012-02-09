@@ -4,7 +4,6 @@
     <string name="url">http://ottochiu.vaelen.org/mse/heartrate_input.php</string>
     <string name="connection_option">Select Connection Option</string>
     <string name="heartbeat_simulator">Heartbeat Simulator</string>
-    <string name="use_bluetooth_connection">com.ottochiu.mse.heartbeat_simulator.use_bluetooth_connection</string>
     <string name="server_name">Bluetooth Device Manager</string>
     <string name="uuid">9612f487-8757-4531-9fb0-b01eeb3686db</string>
 
