@@ -114,8 +114,8 @@ public class SendMethodActivity extends Activity {
 
     			updateStatus("Enabling Bluetooth...");
     			
-    			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-    			startActivityForResult(discoverableIntent, 	REQUEST_BT_ENABLE);
+    			Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+    			startActivityForResult(enableIntent, REQUEST_BT_ENABLE);
 
     		} else {
     			updateStatus("Bluetooth enabled.");
