@@ -1,12 +1,17 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
 import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +21,8 @@ import android.widget.TextView;
 
 public class BluetoothDeviceManagerActivity extends Activity {
 	private static final String TAG = "BluetoothDeviceManagerActivity";
+	private static final int REQUEST_BT_ENABLE = 1;
+	private static final int REQUEST_BT_DISCOVERABLE = 2;
 
 	BluetoothAdapter mBtAdapter;
 	Button mListen;
@@ -41,15 +48,33 @@ public class BluetoothDeviceManagerActivity extends Activity {
     	updateStatus("Listening for connection");
     	v.setEnabled(false);
     	
-    	try {
-    		new AcceptConnectionTask().execute();
-    	} catch (IOException e) {
-    		updateStatus("Failed to open Bluetooth communication channel.");
-    	}
+    	Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+    	startActivityForResult(intent, REQUEST_BT_ENABLE);
     }
     
     private void updateStatus(String msg) {
     	mStatus.append(msg + "\n");
+    }
+    
+    
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	// Check for the correct intent
+    	if (requestCode == REQUEST_BT_ENABLE) {
+    		if (resultCode == Activity.RESULT_OK) {
+    			updateStatus("Bluetooth enabled.");
+    			mBtAdapter.setName(getString(R.string.app_name));
+    			
+        		try {
+        			new AcceptConnectionTask().execute();
+            	} catch (IOException e) {
+            		updateStatus("Failed to open Bluetooth communication channel.");
+            		mListen.setEnabled(true);
+            	}
+    		} else {
+    			updateStatus("Bluetooth NOT enabled.");
+    			mListen.setEnabled(true);
+    		}
+    	}
     }
     
     private class AcceptConnectionTask extends AsyncTask<Void, Void, BluetoothSocket> {
@@ -67,15 +92,15 @@ public class BluetoothDeviceManagerActivity extends Activity {
 			
 			BluetoothSocket socket = null;
 			
-			while (true) {
-				try {
-					
-					socket = mServerSocket.accept(Integer.parseInt(getString(R.string.connection_timeout)));
-					mServerSocket.close();
-				} catch (IOException e) {
-					Log.i(TAG, "#####" + e.getMessage());
-					break;
-				}
+			try {
+				
+				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+				startActivityForResult(intent, REQUEST_BT_DISCOVERABLE);
+				
+				socket = mServerSocket.accept(Integer.parseInt(getString(R.string.connection_timeout)));
+				mServerSocket.close();
+			} catch (IOException e) {
+				Log.i(TAG, e.getMessage());
 			}
 			
 			return socket;
@@ -85,11 +110,45 @@ public class BluetoothDeviceManagerActivity extends Activity {
 		protected void onPostExecute(BluetoothSocket socket) {
 			try {
 				updateStatus("Accepted connection from socket: " + socket);
+				
+				InputStream in = socket.getInputStream();
+				ByteBuffer buf = ByteBuffer.allocate(Integer.SIZE / 8);
+
+				in.read(buf.array());
+				int items = buf.getInt(0);
+				
+				buf = ByteBuffer.allocate(items * Long.SIZE / 8);
+				in.read(buf.array());
+				
+				LongBuffer longBuf = buf.asLongBuffer();
+				longBuf.position(0);
+				
+				try {
+					while (true) {
+						updateStatus(longBuf.get() + " ms");
+					}
+				} catch (BufferUnderflowException e) {
+				}
+				
+				updateStatus(Integer.toString(in.read()));
+				socket.close();
 			} catch (NullPointerException e) {
 				updateStatus("Bluetooth connection failed.");
+			} catch (IOException e) {
+				updateStatus("IO Exception");
 			}
 			
 			mListen.setEnabled(true);
+		}
+
+		@Override
+		protected void onCancelled() {
+			try {
+				// stop waiting for a connection.
+				mServerSocket.close();
+			} catch (IOException e) {
+				Log.i(TAG, "Error closing Bluetooth connection.");
+			}
 		}
 		
     }

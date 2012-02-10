@@ -1,12 +1,12 @@
 package com.ottochiu.mse.heartbeat_simulator;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.List;
 
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
@@ -82,8 +82,10 @@ public class HeartbeatSimulatorActivity extends Activity {
     	try {
     		// Do not allow data transfer to be interrupted.
     		mTask.cancel(false);
+    		SimulatorApplication.getApplication(this).getSocket().close();
     	} catch (NullPointerException e) {
-    	}
+    	} catch (IOException e) {
+		}
     }
     
     @Override

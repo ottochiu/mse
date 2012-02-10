@@ -1,6 +1,8 @@
 package com.ottochiu.mse.heartbeat_simulator;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +13,8 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+
+import android.bluetooth.BluetoothSocket;
 
 
 abstract class DataSender {
@@ -65,8 +69,32 @@ class HttpDataSender extends DataSender {
 // Send data via Bluetooth connection
 class BluetoothDataSender extends DataSender {
 	
+	BluetoothSocket mSocket;
+	
+	BluetoothDataSender(BluetoothSocket socket) {
+		mSocket = socket;
+	}
+	
 	@Override
 	String send(String timestamp, List<Long> intervals) {
-		return "Bluetooth not yet implemented";
+		try {
+			OutputStream out = mSocket.getOutputStream();
+			Long[] items = intervals.toArray(new Long[0]);
+			ByteBuffer buf = ByteBuffer.allocate((Integer.SIZE + intervals.size() * Long.SIZE) / 8);
+
+			// Write the size so the server knows how many items to read.
+			buf.putInt(intervals.size());
+			
+			for (Long val : intervals) {
+				buf.putLong(val.longValue());
+			}
+			
+			out.write(buf.array());
+			return "Finished writing";
+		} catch (IOException e) {
+			return "Bluetooth output error";
+		}
+		
+//		return "Bluetooth not yet implemented";
 	}
 }

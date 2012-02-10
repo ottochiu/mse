@@ -31,7 +31,9 @@ public class SimulatorApplication extends Application {
 	}
 	
 	void setSender(boolean useBluetooth) {
-		mSender = useBluetooth ? new BluetoothDataSender() : new HttpDataSender(getString(R.string.url));
+		mSender = useBluetooth ? 
+				new BluetoothDataSender(mSocket) :
+					new HttpDataSender(getString(R.string.url));
 	}
 	
 	DataSender getSender() {
