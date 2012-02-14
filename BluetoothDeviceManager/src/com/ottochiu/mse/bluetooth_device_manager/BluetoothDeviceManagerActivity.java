@@ -2,6 +2,8 @@ package com.ottochiu.mse.bluetooth_device_manager;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -9,6 +11,7 @@ import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
@@ -22,7 +25,6 @@ import android.widget.TextView;
 public class BluetoothDeviceManagerActivity extends Activity {
 	private static final String TAG = "BluetoothDeviceManagerActivity";
 	private static final int REQUEST_BT_ENABLE = 1;
-	private static final int REQUEST_BT_DISCOVERABLE = 2;
 
 	BluetoothAdapter mBtAdapter;
 	Button mListen;
@@ -64,10 +66,27 @@ public class BluetoothDeviceManagerActivity extends Activity {
     			updateStatus("Bluetooth enabled.");
     			mBtAdapter.setName(getString(R.string.app_name));
     			
+    			for (BluetoothDevice device : mBtAdapter.getBondedDevices()) {
+    				updateStatus("Bonded device: " + device.getName());
+    				
+    				// TODO: clean up
+    				if (device.getName().equals("Heartbeat Simulator")) {
+    					updateStatus("Client found @ " + device.getAddress());
+    			
+    	        		try {
+    	        			new PairedConnectionTask(device).execute();
+    	        			return;
+    	            	} catch (IOException e) {
+    	            		updateStatus("Failed to open paired Bluetooth communication channel: " + e.getMessage());
+    	            		mListen.setEnabled(true);
+    	            	}
+    				}
+    			}
+    			
         		try {
         			new AcceptConnectionTask().execute();
             	} catch (IOException e) {
-            		updateStatus("Failed to open Bluetooth communication channel.");
+            		updateStatus("Failed to open Bluetooth communication channel: " + e.getMessage());
             		mListen.setEnabled(true);
             	}
     		} else {
@@ -77,12 +96,76 @@ public class BluetoothDeviceManagerActivity extends Activity {
     	}
     }
     
-    private class AcceptConnectionTask extends AsyncTask<Void, Void, BluetoothSocket> {
+    private class PairedConnectionTask extends AsyncTask<Void, String, Void> {
+    	private BluetoothSocket mSocket;
+    	
+    	public PairedConnectionTask(BluetoothDevice device) throws IOException {
+//    		mSocket = device.createRfcommSocketToServiceRecord(
+//    				UUID.fromString(getString(R.string.uuid)));
+    		
+    		try {
+	    		Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
+	            mSocket = (BluetoothSocket) m.invoke(device, 1);
+    		} catch (IllegalArgumentException e) {
+    			
+    		} catch (IllegalAccessException e) {
+    			
+    		} catch (InvocationTargetException e) {
+    			
+    		} catch (NoSuchMethodException e) {
+    			
+    		}
+		}
+    	
+    	
+		@Override
+		protected Void doInBackground(Void... params) {
+			publishProgress("Paired async task execute");
+			try {
+				mBtAdapter.cancelDiscovery();
+				mSocket.connect();
+				InputStream in = mSocket.getInputStream();
+				
+				ByteBuffer buf = ByteBuffer.allocate(Integer.SIZE / 8);
+
+				in.read(buf.array());
+				int items = buf.getInt(0);
+				updateStatus("Received " + items + " items.");
+				
+				buf = ByteBuffer.allocate(items * Long.SIZE / 8);
+				in.read(buf.array());
+				
+				LongBuffer longBuf = buf.asLongBuffer();
+				longBuf.position(0);
+				
+				try {
+					while (items-- > 0) {
+						updateStatus(longBuf.get() + " ms");
+					}
+				} catch (BufferUnderflowException e) {
+					updateStatus("Data packet format error.");
+				}
+
+			} catch (IOException e) {
+				publishProgress("Paired execute problem: " + e.getMessage());
+			}
+			
+			return null;
+		}
+
+
+		@Override
+		protected void onProgressUpdate(String... s) {
+			updateStatus(s[0]);
+		}
+    }
+    
+    private class AcceptConnectionTask extends AsyncTask<Void, String, BluetoothSocket> {
 
     	private final BluetoothServerSocket mServerSocket;
     	
     	public AcceptConnectionTask() throws IOException {
-    		mServerSocket = mBtAdapter.listenUsingInsecureRfcommWithServiceRecord(
+    		mServerSocket = mBtAdapter.listenUsingRfcommWithServiceRecord(
     				getString(R.string.app_name), UUID.fromString(getString(R.string.uuid)));
 		}
     	
@@ -93,14 +176,14 @@ public class BluetoothDeviceManagerActivity extends Activity {
 			BluetoothSocket socket = null;
 			
 			try {
-				
 				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-				startActivityForResult(intent, REQUEST_BT_DISCOVERABLE);
-				
+				startActivity(intent);
+
+				publishProgress("listening on server");
 				socket = mServerSocket.accept(Integer.parseInt(getString(R.string.connection_timeout)));
 				mServerSocket.close();
 			} catch (IOException e) {
-				Log.i(TAG, e.getMessage());
+				publishProgress(e.getMessage());
 			}
 			
 			return socket;
@@ -116,6 +199,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
 
 				in.read(buf.array());
 				int items = buf.getInt(0);
+				updateStatus("Received " + items + " items.");
 				
 				buf = ByteBuffer.allocate(items * Long.SIZE / 8);
 				in.read(buf.array());
@@ -124,13 +208,13 @@ public class BluetoothDeviceManagerActivity extends Activity {
 				longBuf.position(0);
 				
 				try {
-					while (true) {
+					while (items-- > 0) {
 						updateStatus(longBuf.get() + " ms");
 					}
 				} catch (BufferUnderflowException e) {
+					updateStatus("Data packet format error.");
 				}
 				
-				updateStatus(Integer.toString(in.read()));
 				socket.close();
 			} catch (NullPointerException e) {
 				updateStatus("Bluetooth connection failed.");
@@ -141,6 +225,11 @@ public class BluetoothDeviceManagerActivity extends Activity {
 			mListen.setEnabled(true);
 		}
 
+		@Override
+		protected void onProgressUpdate(String... s) {
+			updateStatus(s[0]);
+		}
+		
 		@Override
 		protected void onCancelled() {
 			try {

@@ -15,6 +15,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
 import android.bluetooth.BluetoothSocket;
+import android.util.Log;
 
 
 abstract class DataSender {
@@ -68,6 +69,7 @@ class HttpDataSender extends DataSender {
 
 // Send data via Bluetooth connection
 class BluetoothDataSender extends DataSender {
+	private static final String TAG = "BluetoothDataSender";
 	
 	BluetoothSocket mSocket;
 	
@@ -90,11 +92,13 @@ class BluetoothDataSender extends DataSender {
 			}
 			
 			out.write(buf.array());
+			out.flush();
+			
+			Log.i(TAG, "Sending via Bluetooth");
+			
 			return "Finished writing";
 		} catch (IOException e) {
 			return "Bluetooth output error";
 		}
-		
-//		return "Bluetooth not yet implemented";
 	}
 }

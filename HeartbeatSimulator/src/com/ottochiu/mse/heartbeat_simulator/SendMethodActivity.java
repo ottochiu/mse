@@ -1,11 +1,14 @@
 package com.ottochiu.mse.heartbeat_simulator;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -153,7 +156,7 @@ public class SendMethodActivity extends Activity {
     		updateStatus("Bonded device: " + device.getName());
     		
     		if (device.getName().equals(getString(R.string.server_name))) {
-    			updateStatus("Server found.");
+    			updateStatus("Server found @ " + device.getAddress());
     			startConnection(device);
     			return;
     		}
@@ -186,7 +189,7 @@ public class SendMethodActivity extends Activity {
 		try {
 			new ConnectTask(SimulatorApplication.getApplication(this), device).execute();
 		} catch (IOException e) {
-			updateStatus("Bluetooth connection failed.");
+			updateStatus("Bluetooth connection failed: " + e.getMessage());
 			mConnectionGroup.setVisibility(View.VISIBLE);
 		}
     }
@@ -204,7 +207,7 @@ public class SendMethodActivity extends Activity {
     
     
     
-    private class ConnectTask extends AsyncTask<Void, Void, Boolean> {
+    private class ConnectTask extends AsyncTask<Void, String, Boolean> {
 
     	ConnectTask(SimulatorApplication app, BluetoothDevice device) throws IOException {
     		mApp = app;
@@ -212,7 +215,7 @@ public class SendMethodActivity extends Activity {
     		// This is the device to use for the rest of the application.
     		mApp.setDevice(device);
     		
-    		mApp.setSocket(mApp.getDevice().createRfcommSocketToServiceRecord(
+    		mApp.setSocket(device.createRfcommSocketToServiceRecord(
     				UUID.fromString(getString(R.string.uuid))));
     	}
     	
@@ -221,6 +224,7 @@ public class SendMethodActivity extends Activity {
 		protected Boolean doInBackground(Void... params) {
 			
 			try {
+				publishProgress("Connecting to " + mApp.getDevice().getName());
 				mApp.getSocket().connect();
 				return Boolean.TRUE;
 				
@@ -229,8 +233,13 @@ public class SendMethodActivity extends Activity {
 					mApp.getSocket().close();
 				} catch (IOException e1) { }
 				
+				publishProgress(e.getMessage());
 				return Boolean.FALSE;
 			}
+		}
+		
+		protected void onProgressUpdate(String... s) {
+			updateStatus(s[0]);
 		}
 		
 		protected void onPostExecute(Boolean status) {
