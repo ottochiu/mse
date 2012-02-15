@@ -66,23 +66,6 @@ public class BluetoothDeviceManagerActivity extends Activity {
     			updateStatus("Bluetooth enabled.");
     			mBtAdapter.setName(getString(R.string.app_name));
     			
-    			for (BluetoothDevice device : mBtAdapter.getBondedDevices()) {
-    				updateStatus("Bonded device: " + device.getName());
-    				
-    				// TODO: clean up
-    				if (device.getName().equals("Heartbeat Simulator")) {
-    					updateStatus("Client found @ " + device.getAddress());
-    			
-    	        		try {
-    	        			new PairedConnectionTask(device).execute();
-    	        			return;
-    	            	} catch (IOException e) {
-    	            		updateStatus("Failed to open paired Bluetooth communication channel: " + e.getMessage());
-    	            		mListen.setEnabled(true);
-    	            	}
-    				}
-    			}
-    			
         		try {
         			new AcceptConnectionTask().execute();
             	} catch (IOException e) {
@@ -94,70 +77,6 @@ public class BluetoothDeviceManagerActivity extends Activity {
     			mListen.setEnabled(true);
     		}
     	}
-    }
-    
-    private class PairedConnectionTask extends AsyncTask<Void, String, Void> {
-    	private BluetoothSocket mSocket;
-    	
-    	public PairedConnectionTask(BluetoothDevice device) throws IOException {
-//    		mSocket = device.createRfcommSocketToServiceRecord(
-//    				UUID.fromString(getString(R.string.uuid)));
-    		
-    		try {
-	    		Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
-	            mSocket = (BluetoothSocket) m.invoke(device, 1);
-    		} catch (IllegalArgumentException e) {
-    			
-    		} catch (IllegalAccessException e) {
-    			
-    		} catch (InvocationTargetException e) {
-    			
-    		} catch (NoSuchMethodException e) {
-    			
-    		}
-		}
-    	
-    	
-		@Override
-		protected Void doInBackground(Void... params) {
-			publishProgress("Paired async task execute");
-			try {
-				mBtAdapter.cancelDiscovery();
-				mSocket.connect();
-				InputStream in = mSocket.getInputStream();
-				
-				ByteBuffer buf = ByteBuffer.allocate(Integer.SIZE / 8);
-
-				in.read(buf.array());
-				int items = buf.getInt(0);
-				updateStatus("Received " + items + " items.");
-				
-				buf = ByteBuffer.allocate(items * Long.SIZE / 8);
-				in.read(buf.array());
-				
-				LongBuffer longBuf = buf.asLongBuffer();
-				longBuf.position(0);
-				
-				try {
-					while (items-- > 0) {
-						updateStatus(longBuf.get() + " ms");
-					}
-				} catch (BufferUnderflowException e) {
-					updateStatus("Data packet format error.");
-				}
-
-			} catch (IOException e) {
-				publishProgress("Paired execute problem: " + e.getMessage());
-			}
-			
-			return null;
-		}
-
-
-		@Override
-		protected void onProgressUpdate(String... s) {
-			updateStatus(s[0]);
-		}
     }
     
     private class AcceptConnectionTask extends AsyncTask<Void, String, BluetoothSocket> {

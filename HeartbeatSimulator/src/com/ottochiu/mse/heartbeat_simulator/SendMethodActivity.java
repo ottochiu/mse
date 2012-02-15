@@ -157,7 +157,7 @@ public class SendMethodActivity extends Activity {
     		
     		if (device.getName().equals(getString(R.string.server_name))) {
     			updateStatus("Server found @ " + device.getAddress());
-    			startConnection(device);
+    			startConnection(mBtAdapter.getRemoteDevice(device.getAddress()));
     			return;
     		}
     	}
