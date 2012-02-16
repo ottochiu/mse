@@ -68,14 +68,7 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 
     
     public void log(final String message) {
-    	runOnUiThread(new Runnable() {
-
-			@Override
-			public void run() {
-				updateStatus(message);				
-			}
-    		
-    	});
+    	updateStatus(message);				
     }
     
     public void handle(final ByteBuffer data) {
@@ -87,6 +80,8 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     		public void run() {
     			final LongBuffer buf = data.asLongBuffer();
 
+    			updateStatus("Handling data");
+    			
     			try {
     				while (true) {
     					updateStatus(buf.get() + " ms");
@@ -165,7 +160,7 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     
     // ReaderTask
     private class ReaderTask extends AsyncTask<Void, String, Void> {
-    	final BtConnection btConnection;
+    	private final BtConnection btConnection;
     	
     	ReaderTask(final BtConnection connection) {
     		btConnection = connection;

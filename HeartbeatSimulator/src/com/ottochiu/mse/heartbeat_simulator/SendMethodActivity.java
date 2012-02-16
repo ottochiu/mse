@@ -43,7 +43,7 @@ public class SendMethodActivity extends Activity {
 	    		if (device.getName().equals(getString(R.string.server_name))) {
 	    			updateStatus("Server found.");
 	    			unregisterReceiver(mReceiver);
-	    			startConnection(device);	
+	    			startConnection(mBtAdapter.getRemoteDevice(device.getAddress()));	
 	    		}
 	        } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
 	        	// Discovery finished.
