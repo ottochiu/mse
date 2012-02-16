@@ -1,7 +1,6 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -9,14 +8,13 @@ import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class BluetoothDeviceManagerActivity extends Activity implements IBtConnectionListener {
@@ -26,6 +24,7 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 	BluetoothAdapter mBtAdapter;
 	Button mListen;
 	TextView mStatus;
+	ScrollView scrollView;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +33,7 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
         
         mListen = (Button) findViewById(R.id.listenButton);
         mStatus = (TextView) findViewById(R.id.statusView);
+        scrollView = (ScrollView) findViewById(R.id.scrollView);
         
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         
@@ -58,9 +58,6 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     			updateStatus("Bluetooth enabled.");
     			mBtAdapter.setName(getString(R.string.app_name));
     			
-//    			BtConnection connection = 
-//    					new BtConnection(this, getString(R.string.app_name), UUID.fromString(getString(R.string.uuid))); 
-//    			new AcceptConnectionTask(connection).execute();
     			try {
 					new AcceptConnectionTask().execute();
 				} catch (IOException e) {
@@ -83,6 +80,7 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     public void handle(final ByteBuffer data) {
     	// TODO: distribute to appropriate handler
     	
+    	// the following really belongs to a specific handler but is here as proof of concept
     	runOnUiThread(new Runnable() {
     	
     		@Override
@@ -113,106 +111,59 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 				mStatus.append(msg + "\n");
 			}
     	});
+    	
+		scrollView.post(new Runnable() {
+
+	        @Override
+	        public void run() {
+	        	scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+	        }
+	    });
     }
     
-//    private class AcceptConnectionTask extends AsyncTask<Void, String, Boolean> {
-//
-//    	private final BtConnection btConnection;
-//    	
-//    	AcceptConnectionTask(BtConnection connection) {
-//    		btConnection = connection;
-//		}
-//    	
-//		@Override
-//		protected Boolean doInBackground(Void... params) {
-//
-//			try {
-//				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-//				startActivity(intent);
-//				
-//				btConnection.open(Integer.parseInt(getString(R.string.connection_timeout)));
-//				
-//				return Boolean.TRUE;
-//				
-//			} catch (NumberFormatException e) {
-//				updateStatus(e.getMessage());
-//			} catch (IOException e) {
-//				updateStatus(e.getMessage());
-//			}
-//
-//			return Boolean.FALSE;
-//		}
-//    	
-//		@Override
-//		protected void onPostExecute(Boolean status) {
-//			mListen.setEnabled(true);
-//
-//			if (status.booleanValue()) {
-//				new ReaderTask(btConnection).execute();
-//			} else {
-//				updateStatus("Failed to establish Bluetooth connection.");
-//			}
-//		}
-//
-//		@Override
-//		protected void onCancelled() {
-//			try {
-//				// stop waiting for a connection.
-//				btConnection.close();
-//			} catch (IOException e) {
-//				Log.i(TAG, "Error closing Bluetooth connection.");
-//			}
-//		}
-//		
-//    }
-    
-    
-    private class AcceptConnectionTask extends AsyncTask<Void, String, BluetoothSocket> {
+    private class AcceptConnectionTask extends AsyncTask<Void, String, Void> {
 
-    	private final BluetoothServerSocket mServerSocket;
+    	private final BtConnection connection;
     	
-    	public AcceptConnectionTask() throws IOException {
-    		mServerSocket = mBtAdapter.listenUsingRfcommWithServiceRecord(
-    				getString(R.string.app_name), UUID.fromString(getString(R.string.uuid)));
-		}
-    	
+    	AcceptConnectionTask() throws IOException {
+    		connection = new BtConnection(
+    				BluetoothDeviceManagerActivity.this,
+    				getString(R.string.app_name),
+    				UUID.fromString(getString(R.string.uuid)));  
+    	}
     	
 		@Override
-		protected BluetoothSocket doInBackground(Void... params) {
-			
-			BluetoothSocket socket = null;
+		protected Void doInBackground(Void... params) {
 			
 			try {
 				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
 				startActivity(intent);
 
-				publishProgress("listening on server");
-				socket = mServerSocket.accept(Integer.parseInt(getString(R.string.connection_timeout)));
-				mServerSocket.close();
+				updateStatus("Listening for connection");
+				
+				connection.open(Integer.parseInt(getString(R.string.connection_timeout)));
+				
+				updateStatus("Connection opened");
+				
 			} catch (IOException e) {
-				publishProgress(e.getMessage());
+				updateStatus(e.getMessage());
 			}
 			
-			return socket;
+			return null;
 		}
     	
 		@Override
-		protected void onPostExecute(BluetoothSocket socket) {
-			new someTask(socket).execute();
+		protected void onPostExecute(Void param) {
+			new ReaderTask(connection).execute();
 			
 			mListen.setEnabled(true);
 		}
 
 		@Override
-		protected void onProgressUpdate(String... s) {
-			updateStatus(s[0]);
-		}
-		
-		@Override
 		protected void onCancelled() {
 			try {
 				// stop waiting for a connection.
-				mServerSocket.close();
+				connection.close();
 			} catch (IOException e) {
 				Log.i(TAG, "Error closing Bluetooth connection.");
 			}
@@ -220,85 +171,22 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 		
     }
 
-    private class someTask extends AsyncTask<Void, Void, Void> {
-    	BluetoothSocket socket;
-
-    	someTask(BluetoothSocket socket) {
-    		this.socket = socket;
-    	}
-    	
-		@Override
-		protected Void doInBackground(Void... params) {
-			try {
-				updateStatus("Accepted connection from socket: " + socket);
-				
-				InputStream in = socket.getInputStream();
-				
-				while (!isCancelled()) {
-					ByteBuffer buf = ByteBuffer.allocate(Integer.SIZE / 8);
-
-					in.read(buf.array());
-					int numBytes = buf.getInt(0);
-					updateStatus("Received " + numBytes + " bytes.");
-
-					buf = ByteBuffer.allocate(numBytes);
-					in.read(buf.array());
-
-					LongBuffer longBuf = buf.asLongBuffer();
-					longBuf.position(0);
-
-					try {
-						while (true) {
-							updateStatus(longBuf.get() + " ms");
-						}
-					} catch (BufferUnderflowException e) {
-					}
-				}
-			} catch (NullPointerException e) {
-				updateStatus("Bluetooth connection failed.");
-			} catch (IOException e) {
-				updateStatus("IO Exception");
-			}
-			
-			try {
-				socket.close();
-			} catch (IOException e) {
-				updateStatus("Error closing Bluetooth connection: " + e.getMessage());				
-			}
-			
-			return null;
-		}
-		
-		@Override
-		protected void onCancelled() {
-			try {
-				socket.close();
-			} catch (IOException e) {
-				updateStatus("Error closing Bluetooth connection: " + e.getMessage());
-			}
-		}
-    	
-    }
-    
-    
-    
-    
-    // ReaderTask
     private class ReaderTask extends AsyncTask<Void, Void, Void> {
-    	private final BtConnection btConnection;
-    	
+    	private final BtConnection connection;
+
     	ReaderTask(final BtConnection connection) {
-    		btConnection = connection;
+    		this.connection = connection;
     	}
     	
 		@Override
 		protected Void doInBackground(Void... params) {
-
 			try {
-				btConnection.read();
+				connection.read();
+				
 			} catch (IOException e) {
+				updateStatus(e.getMessage());
 			} catch (RuntimeException e) {
-				updateStatus("Error reading Bluetooth data: " + e.getMessage());
+				updateStatus(e.getMessage());
 			}
 			
 			return null;
@@ -307,11 +195,13 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 		@Override
 		protected void onCancelled() {
 			try {
-				btConnection.close();
+				connection.close();
 			} catch (IOException e) {
 				updateStatus("Error closing Bluetooth connection: " + e.getMessage());
 			}
 		}
+    	
     }
+    
     
 }

@@ -9,40 +9,35 @@ import java.util.UUID;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.util.Log;
 
 
 class BtConnection {
 	private static final String TAG = "BtConnection";
 	private final IBtConnectionListener listener;
 	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-	private final String deviceName;
-	private final UUID uuid;
 	private BluetoothSocket socket;
+	private BluetoothServerSocket serverSocket;
 	
-	BtConnection(
-			IBtConnectionListener listener,
-			String deviceName,
-			UUID uuid) {
+	BtConnection(IBtConnectionListener listener, String deviceName, UUID uuid)
+			throws IOException {
 		this.listener = listener;
-		this.deviceName = deviceName;
-		this.uuid = uuid;
+		
+		// open the server socket for listening.
+		// Do not make the server socket.  Otherwise, all accept() will happen in a serial fashion.
+		serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);
 	}
 	
 	void close() throws IOException {
+		Log.i(TAG, "Closing Bluetooth connection");
 		socket.close();
 	}
 	
 	void open(int timeout) throws IOException {
-		
-		// open the server socket for listening.
-		// Do not make the server socket.  Otherwise, all accept() will happen in a serial fashion.
-		BluetoothServerSocket serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);
-		
 		listener.log("listening on server");
 		
 		// Blocks
 		socket = serverSocket.accept(timeout);
-				
 		serverSocket.close();
 		
 		listener.log("Accepted connection");
