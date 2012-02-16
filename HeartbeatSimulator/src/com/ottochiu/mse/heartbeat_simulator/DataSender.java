@@ -81,7 +81,8 @@ class BluetoothDataSender extends DataSender {
 	String send(String timestamp, List<Long> intervals) {
 		try {
 			OutputStream out = mSocket.getOutputStream();
-			Long[] items = intervals.toArray(new Long[0]);
+			
+			// Message format is: interval size (4 bytes), intervals (arbitrary number of bytes)
 			ByteBuffer buf = ByteBuffer.allocate((Integer.SIZE + intervals.size() * Long.SIZE) / 8);
 
 			// Write the size so the server knows how many items to read.

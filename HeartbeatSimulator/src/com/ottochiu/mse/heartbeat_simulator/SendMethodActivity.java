@@ -1,14 +1,11 @@
 package com.ottochiu.mse.heartbeat_simulator;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -197,7 +194,8 @@ public class SendMethodActivity extends Activity {
     private void simulatorActivity(boolean isBluetoothEnabled) {
     	SimulatorApplication.getApplication(this).setSender(isBluetoothEnabled);
     	Intent intent = new Intent(getApplicationContext(), HeartbeatSimulatorActivity.class);
-        startActivity(intent);	
+        startActivity(intent);
+        mConnectionGroup.setVisibility(View.VISIBLE); // show the options again in case user wants to redo it.
     }
     
     

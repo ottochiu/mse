@@ -2,8 +2,6 @@ package com.ottochiu.mse.bluetooth_device_manager;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -11,7 +9,6 @@ import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
@@ -22,7 +19,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class BluetoothDeviceManagerActivity extends Activity {
+public class BluetoothDeviceManagerActivity extends Activity implements IBtConnectionListener {
 	private static final String TAG = "BluetoothDeviceManagerActivity";
 	private static final int REQUEST_BT_ENABLE = 1;
 
@@ -54,11 +51,6 @@ public class BluetoothDeviceManagerActivity extends Activity {
     	startActivityForResult(intent, REQUEST_BT_ENABLE);
     }
     
-    private void updateStatus(String msg) {
-    	mStatus.append(msg + "\n");
-    }
-    
-    
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	// Check for the correct intent
     	if (requestCode == REQUEST_BT_ENABLE) {
@@ -67,7 +59,12 @@ public class BluetoothDeviceManagerActivity extends Activity {
     			mBtAdapter.setName(getString(R.string.app_name));
     			
         		try {
-        			new AcceptConnectionTask().execute();
+        			BtConnection connection = 
+        					new BtConnection(this, getString(R.string.app_name), UUID.fromString(getString(R.string.uuid))); 
+        			new AcceptConnectionTask(connection).execute();
+        			
+        			
+        			
             	} catch (IOException e) {
             		updateStatus("Failed to open Bluetooth communication channel: " + e.getMessage());
             		mListen.setEnabled(true);
@@ -78,33 +75,46 @@ public class BluetoothDeviceManagerActivity extends Activity {
     		}
     	}
     }
+
+    
+    public void log(String message) {
+    	updateStatus(message);
+    }
+    
+    public void handle(ByteBuffer data) {
+    	// TODO
+    }
+    
+    
+    
+    private void updateStatus(String msg) {
+    	mStatus.append(msg + "\n");
+    }
     
     private class AcceptConnectionTask extends AsyncTask<Void, String, BluetoothSocket> {
 
-    	private final BluetoothServerSocket mServerSocket;
+    	private final BtConnection btConnection;
     	
-    	public AcceptConnectionTask() throws IOException {
-    		mServerSocket = mBtAdapter.listenUsingRfcommWithServiceRecord(
-    				getString(R.string.app_name), UUID.fromString(getString(R.string.uuid)));
+    	public AcceptConnectionTask(BtConnection connection) throws IOException {
+    		btConnection = connection;
 		}
     	
     	
 		@Override
 		protected BluetoothSocket doInBackground(Void... params) {
-			
-			BluetoothSocket socket = null;
-			
-			try {
-				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-				startActivity(intent);
 
-				publishProgress("listening on server");
-				socket = mServerSocket.accept(Integer.parseInt(getString(R.string.connection_timeout)));
-				mServerSocket.close();
+			try {
+				btConnection.open(Integer.parseInt(getString(R.string.connection_timeout)));
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			} catch (IOException e) {
-				publishProgress(e.getMessage());
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			
+			// TODO:
+			BluetoothSocket socket = null;
 			return socket;
 		}
     	
@@ -153,7 +163,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
 		protected void onCancelled() {
 			try {
 				// stop waiting for a connection.
-				mServerSocket.close();
+				btConnection.close();
 			} catch (IOException e) {
 				Log.i(TAG, "Error closing Bluetooth connection.");
 			}
