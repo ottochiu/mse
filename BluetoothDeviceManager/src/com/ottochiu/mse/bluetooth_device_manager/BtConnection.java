@@ -36,16 +36,19 @@ class BtConnection {
 		
 		// open the server socket for listening.
 		// Do not make the server socket.  Otherwise, all accept() will happen in a serial fashion.
-		BluetoothServerSocket serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);			
+		BluetoothServerSocket serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);
 		
 		listener.log("listening on server");
 		
 		// Blocks
 		socket = serverSocket.accept(timeout);
+				
 		serverSocket.close();
+		
+		listener.log("Accepted connection");
 	}
 	
-	synchronized void read() throws IOException {
+	synchronized void read() throws IOException, RuntimeException {
 		final InputStream in = socket.getInputStream();
 		final int headerSize = Integer.SIZE / 8;
 		
@@ -53,10 +56,11 @@ class BtConnection {
 		
 		// Keep reading until somebody closes the connection.
 		while (true) {
+			listener.log("Reading");
 			
 			// First get the number of bytes in the data
 			if (in.read(headerBuf.array()) != headerSize) {
-				throw new IOException("Header corrupted.");
+				throw new RuntimeException("Header corrupted.");
 			}
 			
 			// There are these many bytes in the body.
@@ -67,7 +71,7 @@ class BtConnection {
 			ByteBuffer bodyBuf = ByteBuffer.allocate(bodySize);
 			
 			if (in.read(bodyBuf.array()) != bodySize) {
-				throw new IOException("Body corrupted.");
+				throw new RuntimeException("Body corrupted.");
 			}
 
 			// Reset position for user

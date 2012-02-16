@@ -1,7 +1,6 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -9,8 +8,6 @@ import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -58,17 +55,10 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     			updateStatus("Bluetooth enabled.");
     			mBtAdapter.setName(getString(R.string.app_name));
     			
-        		try {
-        			BtConnection connection = 
-        					new BtConnection(this, getString(R.string.app_name), UUID.fromString(getString(R.string.uuid))); 
-        			new AcceptConnectionTask(connection).execute();
-        			
-        			
-        			
-            	} catch (IOException e) {
-            		updateStatus("Failed to open Bluetooth communication channel: " + e.getMessage());
-            		mListen.setEnabled(true);
-            	}
+    			BtConnection connection = 
+    					new BtConnection(this, getString(R.string.app_name), UUID.fromString(getString(R.string.uuid))); 
+    			new AcceptConnectionTask(connection).execute();
+    			
     		} else {
     			updateStatus("Bluetooth NOT enabled.");
     			mListen.setEnabled(true);
@@ -77,88 +67,89 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     }
 
     
-    public void log(String message) {
-    	updateStatus(message);
+    public void log(final String message) {
+    	runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				updateStatus(message);				
+			}
+    		
+    	});
     }
     
-    public void handle(ByteBuffer data) {
-    	// TODO
+    public void handle(final ByteBuffer data) {
+    	// TODO: distribute to appropriate handler
+    	
+    	runOnUiThread(new Runnable() {
+    	
+    		@Override
+    		public void run() {
+    			final LongBuffer buf = data.asLongBuffer();
+
+    			try {
+    				while (true) {
+    					updateStatus(buf.get() + " ms");
+    				}
+
+    			} catch (BufferUnderflowException e) {
+    				// not an error
+    			}
+    		}
+    	});
     }
     
     
     
-    private void updateStatus(String msg) {
-    	mStatus.append(msg + "\n");
+    private void updateStatus(final String msg) {
+    	runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				mStatus.append(msg + "\n");
+			}
+    	});
     }
     
-    private class AcceptConnectionTask extends AsyncTask<Void, String, BluetoothSocket> {
+    private class AcceptConnectionTask extends AsyncTask<Void, String, Boolean> {
 
     	private final BtConnection btConnection;
     	
-    	public AcceptConnectionTask(BtConnection connection) throws IOException {
+    	AcceptConnectionTask(BtConnection connection) {
     		btConnection = connection;
 		}
     	
-    	
 		@Override
-		protected BluetoothSocket doInBackground(Void... params) {
+		protected Boolean doInBackground(Void... params) {
 
 			try {
+				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+				startActivity(intent);
+				
 				btConnection.open(Integer.parseInt(getString(R.string.connection_timeout)));
+				
+				return Boolean.TRUE;
+				
 			} catch (NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				updateStatus(e.getMessage());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				updateStatus(e.getMessage());
 			}
-			
-			// TODO:
-			BluetoothSocket socket = null;
-			return socket;
+
+			return Boolean.FALSE;
 		}
     	
 		@Override
-		protected void onPostExecute(BluetoothSocket socket) {
-			try {
-				updateStatus("Accepted connection from socket: " + socket);
-				
-				InputStream in = socket.getInputStream();
-				ByteBuffer buf = ByteBuffer.allocate(Integer.SIZE / 8);
-
-				in.read(buf.array());
-				int items = buf.getInt(0);
-				updateStatus("Received " + items + " items.");
-				
-				buf = ByteBuffer.allocate(items * Long.SIZE / 8);
-				in.read(buf.array());
-				
-				LongBuffer longBuf = buf.asLongBuffer();
-				longBuf.position(0);
-				
-				try {
-					while (items-- > 0) {
-						updateStatus(longBuf.get() + " ms");
-					}
-				} catch (BufferUnderflowException e) {
-					updateStatus("Data packet format error.");
-				}
-				
-				socket.close();
-			} catch (NullPointerException e) {
-				updateStatus("Bluetooth connection failed.");
-			} catch (IOException e) {
-				updateStatus("IO Exception");
-			}
-			
+		protected void onPostExecute(Boolean status) {
 			mListen.setEnabled(true);
+
+			if (status.booleanValue()) {
+				new ReaderTask(btConnection).execute();
+			} else {
+				updateStatus("Failed to establish Bluetooth connection.");
+			}
 		}
 
-		@Override
-		protected void onProgressUpdate(String... s) {
-			updateStatus(s[0]);
-		}
-		
 		@Override
 		protected void onCancelled() {
 			try {
@@ -170,4 +161,37 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 		}
 		
     }
+
+    
+    // ReaderTask
+    private class ReaderTask extends AsyncTask<Void, String, Void> {
+    	final BtConnection btConnection;
+    	
+    	ReaderTask(final BtConnection connection) {
+    		btConnection = connection;
+    	}
+    	
+		@Override
+		protected Void doInBackground(Void... params) {
+
+			try {
+				btConnection.read();
+			} catch (IOException e) {
+			} catch (RuntimeException e) {
+				updateStatus("Error reading Bluetooth data: " + e.getMessage());
+			}
+			
+			return null;
+		}
+		
+		@Override
+		protected void onCancelled() {
+			try {
+				btConnection.close();
+			} catch (IOException e) {
+				updateStatus("Error closing Bluetooth connection: " + e.getMessage());
+			}
+		}
+    }
+    
 }
