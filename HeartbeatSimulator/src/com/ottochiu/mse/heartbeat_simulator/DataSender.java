@@ -3,6 +3,7 @@ package com.ottochiu.mse.heartbeat_simulator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,6 +86,7 @@ class BluetoothDataSender extends DataSender {
 			// Message format is: interval size (4 bytes), intervals (arbitrary number of bytes)
 			int numBytes = intervals.size() * Long.SIZE / 8;
 			ByteBuffer buf = ByteBuffer.allocate((Integer.SIZE / 8) + numBytes);
+			buf.order(ByteOrder.LITTLE_ENDIAN);
 
 			// Write the size so the server knows how many bytes to read.
 			buf.putInt(numBytes);

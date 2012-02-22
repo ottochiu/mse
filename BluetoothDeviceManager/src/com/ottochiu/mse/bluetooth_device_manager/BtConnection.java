@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.UUID;
 
 import android.bluetooth.BluetoothAdapter;
@@ -18,7 +19,8 @@ class BtConnection {
 	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 	private BluetoothSocket socket;
 	private BluetoothServerSocket serverSocket;
-	
+	private final int headerSize = Integer.SIZE / 8;
+
 	BtConnection(IBtConnectionListener listener, String deviceName, UUID uuid)
 			throws IOException {
 		this.listener = listener;
@@ -45,9 +47,9 @@ class BtConnection {
 	
 	synchronized void read() throws IOException, RuntimeException {
 		final InputStream in = socket.getInputStream();
-		final int headerSize = Integer.SIZE / 8;
 		
 		final ByteBuffer headerBuf = ByteBuffer.allocate(headerSize);
+		headerBuf.order(ByteOrder.LITTLE_ENDIAN);
 		
 		// Keep reading until somebody closes the connection.
 		while (true) {
@@ -64,6 +66,7 @@ class BtConnection {
 			
 			// Allocate space for the rest of the items to be delivered to the listener
 			ByteBuffer bodyBuf = ByteBuffer.allocate(bodySize);
+			bodyBuf.order(ByteOrder.LITTLE_ENDIAN);
 			
 			if (in.read(bodyBuf.array()) != bodySize) {
 				throw new RuntimeException("Body corrupted.");
@@ -76,8 +79,17 @@ class BtConnection {
 	}
 	
 	synchronized void write(ByteBuffer buf) throws IOException {
-		OutputStream out = socket.getOutputStream();
+		final OutputStream out = socket.getOutputStream();
 		
+		final ByteBuffer headerBuf = ByteBuffer.allocate(headerSize);
+		headerBuf.order(ByteOrder.LITTLE_ENDIAN);
+		
+		// limit <= capacity. Always assume buffer is full.
+		headerBuf.putInt(buf.limit());
+		
+		// write the size and then content. Then flush the stream
+		out.write(headerBuf.array());
+		out.write(buf.array());
 		out.flush();
 	}
 }
