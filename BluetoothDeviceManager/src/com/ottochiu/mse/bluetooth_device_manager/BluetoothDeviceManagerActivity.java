@@ -73,11 +73,11 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     }
 
     
-    public void log(final String message) {
+    public void log(final int id, final String message) {
     	updateStatus(message);				
     }
     
-    public void handle(final ByteBuffer data) {
+    public void handle(final int id, final ByteBuffer data) {
     	// TODO: distribute to appropriate handler
     	
     	// the following really belongs to a specific handler but is here as proof of concept
@@ -128,6 +128,7 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     	AcceptConnectionTask() throws IOException {
     		connection = new BtConnection(
     				BluetoothDeviceManagerActivity.this,
+    				0,
     				getString(R.string.app_name),
     				UUID.fromString(getString(R.string.uuid)));  
     	}

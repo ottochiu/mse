@@ -15,18 +15,25 @@ import android.util.Log;
 
 class BtConnection {
 	private static final String TAG = "BtConnection";
+	private static final int HEADER_SIZE = Integer.SIZE / 8;
 	private final IBtConnectionListener listener;
+	private final int id;
 	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 	private BluetoothSocket socket;
 	private BluetoothServerSocket serverSocket;
-	private final int headerSize = Integer.SIZE / 8;
+	
 
-	BtConnection(IBtConnectionListener listener, String deviceName, UUID uuid)
+	BtConnection(
+			IBtConnectionListener listener,
+			int id, // the unique id of this connection
+			String deviceName,
+			UUID uuid)
 			throws IOException {
 		this.listener = listener;
+		this.id = id;
 		
 		// open the server socket for listening.
-		// Do not make the server socket.  Otherwise, all accept() will happen in a serial fashion.
+		// Do not make the server socket static.  Otherwise, all accept() will happen in a serial fashion.
 		serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);
 	}
 	
@@ -36,33 +43,33 @@ class BtConnection {
 	}
 	
 	void open(int timeout) throws IOException {
-		listener.log("listening on server");
+		listener.log(id, "listening on server");
 		
 		// Blocks
 		socket = serverSocket.accept(timeout);
 		serverSocket.close();
 		
-		listener.log("Accepted connection");
+		listener.log(id, "Accepted connection");
 	}
 	
 	synchronized void read() throws IOException, RuntimeException {
 		final InputStream in = socket.getInputStream();
 		
-		final ByteBuffer headerBuf = ByteBuffer.allocate(headerSize);
+		final ByteBuffer headerBuf = ByteBuffer.allocate(HEADER_SIZE);
 		headerBuf.order(ByteOrder.LITTLE_ENDIAN);
 		
 		// Keep reading until somebody closes the connection.
 		while (true) {
-			listener.log("Reading");
+			listener.log(id, "Reading");
 			
 			// First get the number of bytes in the data
-			if (in.read(headerBuf.array()) != headerSize) {
+			if (in.read(headerBuf.array()) != HEADER_SIZE) {
 				throw new RuntimeException("Header corrupted.");
 			}
 			
 			// There are these many bytes in the body.
 			int bodySize = headerBuf.getInt(0);
-			listener.log("Received " + bodySize + " bytes");
+			listener.log(id, "Received " + bodySize + " bytes");
 			
 			// Allocate space for the rest of the items to be delivered to the listener
 			ByteBuffer bodyBuf = ByteBuffer.allocate(bodySize);
@@ -74,14 +81,14 @@ class BtConnection {
 
 			// Reset position for user
 			bodyBuf.position(0);
-			listener.handle(bodyBuf);
+			listener.handle(id, bodyBuf);
 		}
 	}
 	
 	synchronized void write(ByteBuffer buf) throws IOException {
 		final OutputStream out = socket.getOutputStream();
 		
-		final ByteBuffer headerBuf = ByteBuffer.allocate(headerSize);
+		final ByteBuffer headerBuf = ByteBuffer.allocate(HEADER_SIZE);
 		headerBuf.order(ByteOrder.LITTLE_ENDIAN);
 		
 		// limit <= capacity. Always assume buffer is full.

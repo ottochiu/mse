@@ -4,6 +4,6 @@ import java.nio.ByteBuffer;
 
 interface IBtConnectionListener {
 
-	void log(final String message);
-	void handle(final ByteBuffer data); 
+	void log(final int id, final String message);
+	void handle(final int id, final ByteBuffer data); 
 }
