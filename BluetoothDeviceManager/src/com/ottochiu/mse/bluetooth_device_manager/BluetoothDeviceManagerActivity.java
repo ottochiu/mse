@@ -43,6 +43,8 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
         }
     }
     
+    RegisteredDevices d = new RegisteredDevices(this);
+    
     public void listen(View v) {
     	updateStatus("Listening for connection");
     	v.setEnabled(false);
