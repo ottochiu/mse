@@ -60,7 +60,6 @@ public class RegisteredDevices extends SQLiteOpenHelper {
 		// Implement this method when schema changes
 		Log.e(TAG, "onUpgrade not implemented");
 	}
-
 	
 	public void registerDevice(String deviceName, UUID uuid, String pkgName) {
 		Log.v(TAG, String.format("Registering %s, UUID: %s, package: %s", deviceName, uuid.toString(), pkgName));
@@ -107,6 +106,27 @@ public class RegisteredDevices extends SQLiteOpenHelper {
 		}
 	}
 	
+	public Device getRegisteredDevices(String deviceName) {
+		SQLiteDatabase db = getReadableDatabase();
+
+		Cursor c = db.query(TABLE_NAME, null, COL_DEVICE_NAME + "=?", new String[] { deviceName }, null, null, null);
+		
+		// device name is a key, therefore expect only 1 row
+		if (c.getCount() == 1) {
+			Log.v(TAG, "Registered device found: " + deviceName);
+			c.moveToFirst();
+			
+			return new Device(
+					c.getString(c.getColumnIndex(COL_DEVICE_NAME)),
+					c.getString(c.getColumnIndex(COL_UUID)),
+					c.getString(c.getColumnIndex(COL_PKG_NAME)));
+			
+		} else {
+			Log.i(TAG, "Device not found: " + deviceName);
+			return null;
+		}
+		
+	}
 	
 	public List<Device> getRegisteredDevices() {
 		SQLiteDatabase db = getReadableDatabase();
