@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: C:\\Users\\chiuo01\\workspace\\mse\\BluetoothDeviceManager\\src\\com\\ottochiu\\mse\\bluetooth_device_manager\\IDeviceApplicationService.aidl
+ * Original file: C:\\Users\\chiuo01\\workspace\\mse\\HeartbeatSimPlugin\\src\\com\\ottochiu\\mse\\bluetooth_device_manager\\IDeviceApplicationService.aidl
  */
 package com.ottochiu.mse.bluetooth_device_manager;
 public interface IDeviceApplicationService extends android.os.IInterface
