@@ -21,6 +21,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <service android:name=".DeviceApplicationService">
+            <intent-filter>
+                <action android:name="com.ottochiu.mse.bluetooth_device_manager.IDeviceApplicationService" />
+            </intent-filter>
+        </service>
+                        
     </application>
 
 </manifest>

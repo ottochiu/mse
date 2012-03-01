@@ -5,9 +5,11 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.util.Log;
 
-class DeviceApplicationService extends Service {
+public class DeviceApplicationService extends Service {
 
+	private static final String TAG = "DeviceApplicationService";
 	private final RegisteredDevices devices = new RegisteredDevices(this);
 	
 	private final IDeviceApplicationService.Stub binder = new IDeviceApplicationService.Stub() {
@@ -27,11 +29,13 @@ class DeviceApplicationService extends Service {
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
+		Log.i(TAG, "Binded");
 		return binder;
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		Log.i(TAG, "Started");
 		return START_STICKY;
 	}
 }
