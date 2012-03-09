@@ -63,9 +63,9 @@ return true;
 case TRANSACTION_version:
 {
 data.enforceInterface(DESCRIPTOR);
-int _result = this.version();
+java.lang.String _result = this.version();
 reply.writeNoException();
-reply.writeInt(_result);
+reply.writeString(_result);
 return true;
 }
 }
@@ -109,16 +109,16 @@ _reply.recycle();
 _data.recycle();
 }
 }
-public int version() throws android.os.RemoteException
+public java.lang.String version() throws android.os.RemoteException
 {
 android.os.Parcel _data = android.os.Parcel.obtain();
 android.os.Parcel _reply = android.os.Parcel.obtain();
-int _result;
+java.lang.String _result;
 try {
 _data.writeInterfaceToken(DESCRIPTOR);
 mRemote.transact(Stub.TRANSACTION_version, _data, _reply, 0);
 _reply.readException();
-_result = _reply.readInt();
+_result = _reply.readString();
 }
 finally {
 _reply.recycle();
@@ -131,5 +131,5 @@ static final int TRANSACTION_registerDevice = (android.os.IBinder.FIRST_CALL_TRA
 static final int TRANSACTION_version = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
 }
 public void registerDevice(java.lang.String deviceName, android.os.ParcelUuid uuid, java.lang.String packageName) throws android.os.RemoteException;
-public int version() throws android.os.RemoteException;
+public java.lang.String version() throws android.os.RemoteException;
 }

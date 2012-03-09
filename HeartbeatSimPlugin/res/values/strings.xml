@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Heartbeat Simulator Plugin</string>
-
+    <string name="uuid">b7081f20-082c-4ab3-95f0-07c85103a4af</string>
 </resources>

@@ -2,6 +2,9 @@ package com.ottochiu.mse.bluetooth_device_manager;
 
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
@@ -22,9 +25,34 @@ public class DeviceApplicationService extends Service {
 		}
 
 		@Override
-		public int version() throws RemoteException {
-			return 0;
+		public String version() throws RemoteException {
+			
+			// default bad version name
+			String version = "xx";
+
+			try {
+			  version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+			} catch (NameNotFoundException e) {
+			  Log.e(TAG, "Error getting version");
+			}
+
+			Log.i(TAG, version);
+			return version;
 		}
+
+		@Override
+		public void read(IBluetoothReadCallback callback)
+				throws RemoteException {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void write() {
+			// TODO Auto-generated method stub
+			
+		}
+		
 	};
 	
 	@Override

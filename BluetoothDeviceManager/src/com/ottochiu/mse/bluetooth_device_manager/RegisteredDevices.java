@@ -61,6 +61,7 @@ public class RegisteredDevices extends SQLiteOpenHelper {
 		Log.e(TAG, "onUpgrade not implemented");
 	}
 	
+	
 	public void registerDevice(String deviceName, UUID uuid, String pkgName) {
 		Log.v(TAG, String.format("Registering %s, UUID: %s, package: %s", deviceName, uuid.toString(), pkgName));
 		

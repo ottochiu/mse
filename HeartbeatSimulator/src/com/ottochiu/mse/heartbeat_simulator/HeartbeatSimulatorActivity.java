@@ -77,7 +77,7 @@ public class HeartbeatSimulatorActivity extends Activity {
     
     @Override
     protected void onStop() {
-    	super.onStart();
+    	super.onStop();
     	
     	try {
     		// Do not allow data transfer to be interrupted.

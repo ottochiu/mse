@@ -60,12 +60,30 @@ this.registerDevice(_arg0, _arg1, _arg2);
 reply.writeNoException();
 return true;
 }
+case TRANSACTION_read:
+{
+data.enforceInterface(DESCRIPTOR);
+com.ottochiu.mse.bluetooth_device_manager.IBluetoothReadCallback _arg0;
+_arg0 = com.ottochiu.mse.bluetooth_device_manager.IBluetoothReadCallback.Stub.asInterface(data.readStrongBinder());
+this.read(_arg0);
+reply.writeNoException();
+return true;
+}
+case TRANSACTION_write:
+{
+data.enforceInterface(DESCRIPTOR);
+java.util.List<byte> _arg0;
+_arg0 = data.createBinderArrayList();
+this.write(_arg0);
+reply.writeNoException();
+return true;
+}
 case TRANSACTION_version:
 {
 data.enforceInterface(DESCRIPTOR);
-int _result = this.version();
+java.lang.String _result = this.version();
 reply.writeNoException();
-reply.writeInt(_result);
+reply.writeString(_result);
 return true;
 }
 }
@@ -109,16 +127,50 @@ _reply.recycle();
 _data.recycle();
 }
 }
-public int version() throws android.os.RemoteException
+// Reads from a stream of data from the corresponding BT device. This may block
+
+public void read(com.ottochiu.mse.bluetooth_device_manager.IBluetoothReadCallback callback) throws android.os.RemoteException
 {
 android.os.Parcel _data = android.os.Parcel.obtain();
 android.os.Parcel _reply = android.os.Parcel.obtain();
-int _result;
+try {
+_data.writeInterfaceToken(DESCRIPTOR);
+_data.writeStrongBinder((((callback!=null))?(callback.asBinder()):(null)));
+mRemote.transact(Stub.TRANSACTION_read, _data, _reply, 0);
+_reply.readException();
+}
+finally {
+_reply.recycle();
+_data.recycle();
+}
+}
+// Writes data to the BT device corresponding to the caller. This may block.
+
+public void write(java.util.List<byte> data) throws android.os.RemoteException
+{
+android.os.Parcel _data = android.os.Parcel.obtain();
+android.os.Parcel _reply = android.os.Parcel.obtain();
+try {
+_data.writeInterfaceToken(DESCRIPTOR);
+_data.writeBinderList(data);
+mRemote.transact(Stub.TRANSACTION_write, _data, _reply, 0);
+_reply.readException();
+}
+finally {
+_reply.recycle();
+_data.recycle();
+}
+}
+public java.lang.String version() throws android.os.RemoteException
+{
+android.os.Parcel _data = android.os.Parcel.obtain();
+android.os.Parcel _reply = android.os.Parcel.obtain();
+java.lang.String _result;
 try {
 _data.writeInterfaceToken(DESCRIPTOR);
 mRemote.transact(Stub.TRANSACTION_version, _data, _reply, 0);
 _reply.readException();
-_result = _reply.readInt();
+_result = _reply.readString();
 }
 finally {
 _reply.recycle();
@@ -128,8 +180,16 @@ return _result;
 }
 }
 static final int TRANSACTION_registerDevice = (android.os.IBinder.FIRST_CALL_TRANSACTION + 0);
-static final int TRANSACTION_version = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
+static final int TRANSACTION_read = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
+static final int TRANSACTION_write = (android.os.IBinder.FIRST_CALL_TRANSACTION + 2);
+static final int TRANSACTION_version = (android.os.IBinder.FIRST_CALL_TRANSACTION + 3);
 }
 public void registerDevice(java.lang.String deviceName, android.os.ParcelUuid uuid, java.lang.String packageName) throws android.os.RemoteException;
-public int version() throws android.os.RemoteException;
+// Reads from a stream of data from the corresponding BT device. This may block
+
+public void read(com.ottochiu.mse.bluetooth_device_manager.IBluetoothReadCallback callback) throws android.os.RemoteException;
+// Writes data to the BT device corresponding to the caller. This may block.
+
+public void write(java.util.List<byte> data) throws android.os.RemoteException;
+public java.lang.String version() throws android.os.RemoteException;
 }
