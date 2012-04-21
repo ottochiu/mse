@@ -5,54 +5,69 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    
+    <TextView
+        android:id="@+id/btStatus"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:gravity="center"
+        android:textStyle="bold"
+        android:textColor="#6666FF" />
+        
     <RadioGroup
         android:id="@+id/bluetoothGroup"
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true" >
+        android:layout_below="@id/btStatus" >
 
+        <TextView
+	        android:id="@+id/bluetoothControl"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_alignTop="@id/bluetoothGroup"
+	        android:text="Bluetooth Control"
+	        android:layout_margin="5sp"            
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        
         <RadioButton
             android:id="@+id/bluetoothOn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5sp"
             android:checked="true"
-            android:text="On" />
+            android:text="On"
+            android:onClick="setBtStatus" />
 
         <RadioButton
             android:id="@+id/bluetoothOff"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5sp"            
-            android:text="Off" />
+            android:text="Off"
+            android:onClick="setBtStatus" />
     </RadioGroup>
 
-    <TextView
-        android:id="@+id/bluetoothText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignBaseline="@id/bluetoothGroup"
-        android:text="Bluetooth Status" />
 
-    <Button
-        android:id="@+id/discoveryButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/bluetoothGroup"
-        android:layout_centerHorizontal="true"
-        android:text="Connect New Devices" />
-
-    <TableLayout
-        android:layout_width="wrap_content"
+
+    
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true" />
+    
+    <TableLayout
+        android:id="@+id/connectionTable"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/bluetoothGroup"
+        android:layout_above="@id/status"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/discoveryButton" >
+        android:visibility="invisible" >
 
         <TableRow
             android:id="@+id/tableRow1"
@@ -61,21 +76,21 @@
             android:layout_margin="10sp" >
             
             <TextView
-                android:id="@id/colDeviceName"
+                android:id="@+id/colDeviceName"
                 android:layout_weight="5"
                 android:gravity="center"
                 android:text="@string/colDeviceName"
                 android:textStyle="bold" />
             
             <TextView
-                android:id="@id/colConnectionStatus"
+                android:id="@+id/colConnectionStatus"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="@string/colConnectionStatus"
                 android:textStyle="bold" />
             
             <TextView
-                android:id="@id/colConnectionOption"
+                android:id="@+id/colConnectionOption"
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="@string/colConnectionOption"

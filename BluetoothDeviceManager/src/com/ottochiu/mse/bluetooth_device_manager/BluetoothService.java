@@ -5,8 +5,10 @@ import java.util.UUID;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -14,11 +16,16 @@ import android.util.Log;
 
 public class BluetoothService extends Service {
 
+	public static final String ACTION_LOG = "com.ottochiu.mse.bluetooth_device_manager.ACTION_LOG";
+	public static final String EXTRA_MESSAGE = "EXTRA_MESSAGE";
+	
+	public static final String ACTION_BT_STATUS = "com.ottochiu.mse.bluetooth_device_manager.ACTION_BT_STATUS";
+	public static final String EXTRA_BT_STATUS = "EXTRA_BT_STATUS";
+	
 	private static final String TAG = "Bluetooth Service";
 	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 			
 	private Hashtable<String, BtConnection> connections;
-	private State state = new Idle();
 	private Binder binder = new BtBinder();
 	
 	@Override
@@ -31,12 +38,16 @@ public class BluetoothService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "Start BluetoothService");
+		
+		IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(broadcastReceiver, filter);
+		
 		return START_STICKY;
 	}
 	
 	@Override
 	public void onDestroy() {
-		
+		unregisterReceiver(broadcastReceiver);
 	}
 	
 	// Binder
@@ -46,6 +57,29 @@ public class BluetoothService extends Service {
 		}
 	}
 	
+	
+	public void setEnable(boolean enable) {
+    	if (enable) {
+    		if (btAdapter.isEnabled()) {
+    			updateStatus("Bluetooth is already on");
+    		} else {
+    			updateStatus("Turning on Bluetooth");
+    			if (!btAdapter.enable()) {
+    				updateStatus("Failed turning on Bluetooth. Please try again.");
+    			}
+    		}	
+    	} else {
+    		if (btAdapter.isEnabled()) {
+    			updateStatus("Turning off Bluetooth");
+    			if (!btAdapter.disable()) {
+    				updateStatus("Failed turning off Bluetooth. Please try again.");
+    			}
+    				
+    		} else {
+    			updateStatus("Bluetooth is already off");
+    		}
+    	}
+	}
 	
 	public void reserveConnection(String deviceName, UUID uuid, IBluetoothReadCallback callback)
 	{
@@ -63,40 +97,44 @@ public class BluetoothService extends Service {
 		return connections.get(deviceName);
 	}
 	
-	
-	
-	/////////////////// Bluetooth adapter state ////////////////////
-	
-	
-	
-	// States
-	private abstract class State {
-		public String toString() {
-			return "State";
-		}
+	private void updateStatus(String msg) {
+		Log.i(TAG, msg);
+		Intent intent = new Intent(ACTION_LOG);
+		intent.putExtra(EXTRA_MESSAGE, msg);
+		sendBroadcast(intent);
 	}
 	
-	private class Idle extends State {
-		public String toString() {
-			return "Idle State";
-		}
-	}
 	
-	private class Enabling extends State {
-		public String toString() {
-			return "Enabling State";
+	private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+				
+				String connectionStatus = "Bluetooth is ";
+                switch (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
+                case BluetoothAdapter.STATE_OFF:
+                	connectionStatus += "OFF";
+                	break;
+                case BluetoothAdapter.STATE_ON:
+                	connectionStatus += "ON";
+                	break;
+                case BluetoothAdapter.STATE_TURNING_OFF:
+                	connectionStatus += "TURNING OFF";
+                	break;
+                case BluetoothAdapter.STATE_TURNING_ON:
+                	connectionStatus += "TURNING ON";
+                	break;
+                default:
+                	connectionStatus = "Bluetooth error";
+                	break;
+                }
+                
+                Intent statusIntent = new Intent(ACTION_BT_STATUS);
+                statusIntent.putExtra(EXTRA_BT_STATUS, connectionStatus);
+                
+                sendBroadcast(statusIntent);
+			}
 		}
-	}
-	
-	private class Enabled extends State {
-		public String toString() {
-			return "Enabled State";
-		}
-	}
-	
-	private class DiscoveryEnabled extends State {
-		public String toString() {
-			return "Discovery Enabled State";
-		}
-	}
+	};
 }

@@ -5,9 +5,11 @@ import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,84 +17,131 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ScrollView;
+import android.widget.RadioGroup;
+import android.widget.TableLayout;
 import android.widget.TextView;
 
 public class BluetoothDeviceManagerActivity extends Activity {
 	private static final String TAG = "BluetoothDeviceManagerActivity";
 	private static final int REQUEST_BT_ENABLE = 1;
 
-	BluetoothAdapter mBtAdapter;
-	Button mListen;
-	TextView mStatus;
-	ScrollView scrollView;
+	BluetoothAdapter btAdapter;
+//	Button mListen;
+//	TextView mStatus;
+//	ScrollView scrollView;
+	RadioGroup btControl;
+	TableLayout connectionTable;
+	TextView btStatus;
+	TextView status;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
-        mListen = (Button) findViewById(R.id.listenButton);
-        mStatus = (TextView) findViewById(R.id.statusView);
-        scrollView = (ScrollView) findViewById(R.id.scrollView);
+        btControl = (RadioGroup) findViewById(R.id.bluetoothGroup);
+        connectionTable = (TableLayout) findViewById(R.id.connectionTable);
+        btStatus = (TextView) findViewById(R.id.btStatus);
+        status = (TextView) findViewById(R.id.status);
         
-        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+        btAdapter = BluetoothAdapter.getDefaultAdapter();
         
-        if (mBtAdapter == null) {
+        if (btAdapter == null) {
         	updateStatus("Bluetooth not available on this device.");
-        	mListen.setEnabled(false);
+        	btControl.check(R.id.bluetoothOff);
+        	
+        	btControl.getChildAt(0).setEnabled(false);
+        	btControl.getChildAt(1).setEnabled(false);
+        	btStatus.setText("Bluetooth is unavailable");
         }
         else {
+        	
+        	if (btAdapter.isEnabled()) {
+        		btControl.check(R.id.bluetoothOn);
+        		btStatus.setText("Bluetooth is ON");
+        	} else {
+        		btControl.check(R.id.bluetoothOff);
+        		btStatus.setText("Bluetooth is OFF");        		
+        	}
+        	
         	new StartBluetoothService().execute();
         }
     }
     
-    public void listen(View v) {
-    	updateStatus("Listening for connection");
-    	v.setEnabled(false);
+    @Override
+    protected void onDestroy() {
+    	super.onDestroy();
     	
-    	Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-    	startActivityForResult(intent, REQUEST_BT_ENABLE);
+    	unbindService(connection);
+    	unregisterReceiver(broadcastReceiver);
     }
+    
+    public void setBtStatus(View v) {
+    	bluetoothService.setEnable(btControl.getCheckedRadioButtonId() == R.id.bluetoothOn);
+    }
+    
+    
+    
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals(BluetoothService.ACTION_LOG)) {
+                String msg = intent.getStringExtra(BluetoothService.EXTRA_MESSAGE);
+                
+                updateStatus(msg);
+                
+			} else if (intent.getAction().equals(BluetoothService.ACTION_BT_STATUS)) {
+                String msg = intent.getStringExtra(BluetoothService.EXTRA_BT_STATUS);
+                
+                btStatus.setText(msg);
+			}
+		}
+	};
+    
+    
+    
     
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
     	// Check for the correct intent
     	if (requestCode == REQUEST_BT_ENABLE) {
     		if (resultCode == Activity.RESULT_OK) {
     			updateStatus("Bluetooth enabled.");
-    			mBtAdapter.setName(getString(R.string.app_name));
-    			
-    			try {
-					new AcceptConnectionTask().execute();
-				} catch (IOException e) {
-            		updateStatus("Failed to open Bluetooth communication channel: " + e.getMessage());
-            		mListen.setEnabled(true);
-				}
+    			btAdapter.setName(getString(R.string.app_name));
+
+//    			try {
+//					new AcceptConnectionTask().execute();
+//				} catch (IOException e) {
+//            		updateStatus("Failed to open Bluetooth communication channel: " + e.getMessage());
+//            		mListen.setEnabled(true);
+//				}
     			
     		} else {
     			updateStatus("Bluetooth NOT enabled.");
-    			mListen.setEnabled(true);
+    			btControl.check(R.id.bluetoothOff);
+//    			mListen.setEnabled(true);
     		}
     	}
     }
     
     
     private void updateStatus(final String msg) {
+    	Log.i(TAG, msg);
     	runOnUiThread(new Runnable() {
 
 			@Override
 			public void run() {
-				mStatus.append(msg + "\n");
+				status.setText(msg + "\n");
 			}
     	});
     	
-		scrollView.post(new Runnable() {
+//		scrollView.post(new Runnable() {
 
-	        @Override
-	        public void run() {
-	        	scrollView.fullScroll(ScrollView.FOCUS_DOWN);
-	        }
-	    });
+//	        @Override
+//	        public void run() {
+//	        	scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+//	        }
+//	    });
     }
     
     //////////////// BluetoothService /////////////////
@@ -102,6 +151,13 @@ public class BluetoothDeviceManagerActivity extends Activity {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			bluetoothService = ((BluetoothService.BtBinder) service).getService();
+
+			IntentFilter filter = new IntentFilter();
+			filter.addAction(BluetoothService.ACTION_LOG);
+			filter.addAction(BluetoothService.ACTION_BT_STATUS);
+			
+	        registerReceiver(broadcastReceiver, filter);
+			
 			Log.i(TAG, "Bluetooth service connected.");
 		}
 
@@ -180,7 +236,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
 		protected void onPostExecute(Void param) {
 			new ReaderTask(connection).execute();
 			
-			mListen.setEnabled(true);
+//			mListen.setEnabled(true);
 		}
 
 		@Override
