@@ -5,6 +5,94 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
+    
+    <RadioGroup
+        android:id="@+id/bluetoothGroup"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true" >
+
+        <RadioButton
+            android:id="@+id/bluetoothOn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5sp"
+            android:checked="true"
+            android:text="On" />
+
+        <RadioButton
+            android:id="@+id/bluetoothOff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5sp"            
+            android:text="Off" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/bluetoothText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignBaseline="@id/bluetoothGroup"
+        android:text="Bluetooth Status" />
+
+    <Button
+        android:id="@+id/discoveryButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/bluetoothGroup"
+        android:layout_centerHorizontal="true"
+        android:text="Connect New Devices" />
+
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/discoveryButton" >
+
+        <TableRow
+            android:id="@+id/tableRow1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10sp" >
+            
+            <TextView
+                android:id="@id/colDeviceName"
+                android:layout_weight="5"
+                android:gravity="center"
+                android:text="@string/colDeviceName"
+                android:textStyle="bold" />
+            
+            <TextView
+                android:id="@id/colConnectionStatus"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/colConnectionStatus"
+                android:textStyle="bold" />
+            
+            <TextView
+                android:id="@id/colConnectionOption"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/colConnectionOption"
+                android:textStyle="bold" />            
+        </TableRow>
+        
+    </TableLayout>
+    
+</RelativeLayout>
+
+<!--
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/RelativeLayout1"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
     <Button
         android:id="@+id/listenButton"
         android:layout_width="wrap_content"
@@ -26,5 +114,6 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"/>
     </ScrollView>
+</RelativeLayout>
+-->
 
-</RelativeLayout>

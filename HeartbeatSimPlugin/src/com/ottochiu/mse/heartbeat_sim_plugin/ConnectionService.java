@@ -1,7 +1,11 @@
 package com.ottochiu.mse.heartbeat_sim_plugin;
 
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.LongBuffer;
+
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +17,7 @@ import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.ottochiu.mse.bluetooth_device_manager.IBluetoothReadCallback;
 import com.ottochiu.mse.bluetooth_device_manager.IDeviceApplicationService;
 
 // This service interacts with the DeviceApplicationService.
@@ -116,7 +121,8 @@ public class ConnectionService extends Service {
 	        		applicationService.registerDevice(
 	        				deviceName,
 	        				ParcelUuid.fromString(getString(R.string.uuid)),
-	        				HeartbeatSimulatorPluginActivity.class.getPackage().getName());
+	        				HeartbeatSimulatorPluginActivity.class.getPackage().getName(),
+	        				handler);
 	        		
 	        		return Boolean.TRUE;
 	        		
@@ -164,4 +170,28 @@ public class ConnectionService extends Service {
     
 	////////////////////////////////////////////	
 
+	/////////////// Callback ///////////////////
+	private IBluetoothReadCallback.Stub handler = new IBluetoothReadCallback.Stub() {
+		
+		@Override
+		public void handle(byte[] data) throws RemoteException {
+			Log.i(TAG, "received data: " + data.length + " bytes");
+			
+			ByteBuffer buf = ByteBuffer.wrap(data);
+			buf.order(ByteOrder.LITTLE_ENDIAN);
+			
+			try {
+				byte[] str = new byte[buf.getInt()];
+				buf.get(str);
+				updateStatus("Start timestamp: " + new String(str));
+				
+				while (true) {
+					updateStatus(buf.getLong() + " ms");
+				}
+
+			} catch (BufferUnderflowException e) {
+				// not an error
+			}
+		}
+	};
 }

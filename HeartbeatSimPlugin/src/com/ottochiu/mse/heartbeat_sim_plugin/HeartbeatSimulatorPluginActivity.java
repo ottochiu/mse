@@ -108,13 +108,14 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
 
 		@Override
 		protected Boolean doInBackground(Void... params) {
+
+			Intent intent = new Intent(HeartbeatSimulatorPluginActivity.this, ConnectionService.class); 
+			startService(intent);
 			
-			startService(new Intent(HeartbeatSimulatorPluginActivity.this, ConnectionService.class));
-			
-			boolean isBounded = bindService(new Intent(HeartbeatSimulatorPluginActivity.this, ConnectionService.class), 
+			boolean isBounded = bindService(intent, 
 	        		connection, Context.BIND_AUTO_CREATE);
 		
-			Log.i(TAG, "Connection service started");
+			Log.i(TAG, "Connection service started: " + isBounded);
 			
 			return Boolean.valueOf(isBounded);
 		}

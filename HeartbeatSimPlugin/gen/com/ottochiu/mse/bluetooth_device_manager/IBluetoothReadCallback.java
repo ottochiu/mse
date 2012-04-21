@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: C:\\Documents and Settings\\ochiu\\workspace\\mse\\BluetoothDeviceManager\\src\\com\\ottochiu\\mse\\bluetooth_device_manager\\IBluetoothReadCallback.aidl
+ * Original file: C:\\Documents and Settings\\ochiu\\workspace\\mse\\HeartbeatSimPlugin\\src\\com\\ottochiu\\mse\\bluetooth_device_manager\\IBluetoothReadCallback.aidl
  */
 package com.ottochiu.mse.bluetooth_device_manager;
 public interface IBluetoothReadCallback extends android.os.IInterface

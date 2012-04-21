@@ -1,5 +1,5 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 
 oneway interface IBluetoothReadCallback {
-  void handle(int id, in List<byte> data); 
+  void handle(in byte[] data); 
 }

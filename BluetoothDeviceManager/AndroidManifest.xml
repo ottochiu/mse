@@ -27,7 +27,8 @@
                 <action android:name="com.ottochiu.mse.bluetooth_device_manager.IDeviceApplicationService" />
             </intent-filter>
         </service>
-                        
+
+        <service android:name=".BluetoothService" android:exported="false" />
     </application>
 
 </manifest>

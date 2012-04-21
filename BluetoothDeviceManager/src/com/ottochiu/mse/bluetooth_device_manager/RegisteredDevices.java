@@ -107,7 +107,7 @@ public class RegisteredDevices extends SQLiteOpenHelper {
 		}
 	}
 	
-	public Device getRegisteredDevices(String deviceName) {
+	public Device getRegisteredDevice(String deviceName) {
 		SQLiteDatabase db = getReadableDatabase();
 
 		Cursor c = db.query(TABLE_NAME, null, COL_DEVICE_NAME + "=?", new String[] { deviceName }, null, null, null);

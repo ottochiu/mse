@@ -5,14 +5,19 @@ import com.ottochiu.mse.bluetooth_device_manager.IBluetoothReadCallback;
 
 interface IDeviceApplicationService {
   
-  void registerDevice(String deviceName, in ParcelUuid uuid, String packageName);
+  void registerDevice(
+    String deviceName,
+    in ParcelUuid uuid,
+    String packageName,
+    IBluetoothReadCallback callback);
   
   
   // Reads from a stream of data from the corresponding BT device. This may block
-  void read(IBluetoothReadCallback callback);
+  // Data are sent to the registered callback
+  void read(String deviceName);
   
   // Writes data to the BT device corresponding to the caller. This may block.
-  void write(in List<byte> data);
+  void write(String deviceName, in byte[] data);
   
   String version();
 }

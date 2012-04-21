@@ -1,14 +1,15 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 import java.io.IOException;
-import java.util.List;
+import java.util.Hashtable;
 import java.util.UUID;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 
 
 public class BluetoothService extends Service {
@@ -16,35 +17,20 @@ public class BluetoothService extends Service {
 	private static final String TAG = "Bluetooth Service";
 	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 			
-	private List<BtConnection> connections;
+	private Hashtable<String, BtConnection> connections;
 	private State state = new Idle();
 	private Binder binder = new BtBinder();
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
+		Log.i(TAG, "OnBind BluetoothService");
 		return binder;
 	}
 	
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		
-		Bundle extras = intent.getExtras();
-		
-		if (extras != null) {
-			String deviceName = extras.getString("device name");
-			UUID uuid = UUID.fromString(extras.getString("uuid"));
-		
-			try {
-				// TODO
-				connections.add(new BtConnection(null, 0, deviceName, uuid));
-			} catch (IOException e) {
-				// TODO: update status e.getMessage();
-			}
-		}
-		
-		
-		
+		Log.i(TAG, "Start BluetoothService");
 		return START_STICKY;
 	}
 	
@@ -53,14 +39,34 @@ public class BluetoothService extends Service {
 		
 	}
 	
-	
-	
 	// Binder
 	public class BtBinder extends Binder {
 		BluetoothService getService() {
 			return BluetoothService.this;
 		}
 	}
+	
+	
+	public void reserveConnection(String deviceName, UUID uuid, IBluetoothReadCallback callback)
+	{
+		// Will overwrite UUID if the same deviceName is used
+		try {
+			connections.put(
+					deviceName,
+					new BtConnection(callback, deviceName, uuid));
+		} catch (IOException e) {
+			Log.e(TAG, e.getMessage());
+		}
+	}
+	
+	public BtConnection getBtConnection(String deviceName) {
+		return connections.get(deviceName);
+	}
+	
+	
+	
+	/////////////////// Bluetooth adapter state ////////////////////
+	
 	
 	
 	// States

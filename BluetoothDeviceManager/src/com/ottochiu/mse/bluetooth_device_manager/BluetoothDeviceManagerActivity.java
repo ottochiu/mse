@@ -1,23 +1,24 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 
 import java.io.IOException;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 import java.util.UUID;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class BluetoothDeviceManagerActivity extends Activity implements IBtConnectionListener {
+public class BluetoothDeviceManagerActivity extends Activity {
 	private static final String TAG = "BluetoothDeviceManagerActivity";
 	private static final int REQUEST_BT_ENABLE = 1;
 
@@ -40,6 +41,9 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
         if (mBtAdapter == null) {
         	updateStatus("Bluetooth not available on this device.");
         	mListen.setEnabled(false);
+        }
+        else {
+        	new StartBluetoothService().execute();
         }
     }
     
@@ -71,36 +75,6 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
     		}
     	}
     }
-
-    
-    public void log(final int id, final String message) {
-    	updateStatus(message);				
-    }
-    
-    public void handle(final int id, final ByteBuffer data) {
-    	// TODO: distribute to appropriate handler
-    	
-    	// the following really belongs to a specific handler but is here as proof of concept
-    	runOnUiThread(new Runnable() {
-    	
-    		@Override
-    		public void run() {
-    			final LongBuffer buf = data.asLongBuffer();
-
-    			updateStatus("Handling data");
-    			
-    			try {
-    				while (true) {
-    					updateStatus(buf.get() + " ms");
-    				}
-
-    			} catch (BufferUnderflowException e) {
-    				// not an error
-    			}
-    		}
-    	});
-    }
-    
     
     
     private void updateStatus(final String msg) {
@@ -121,14 +95,63 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 	    });
     }
     
+    //////////////// BluetoothService /////////////////
+	private BluetoothService bluetoothService;
+	private ServiceConnection connection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			bluetoothService = ((BluetoothService.BtBinder) service).getService();
+			Log.i(TAG, "Bluetooth service connected.");
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			bluetoothService = null;
+			Log.i(TAG, "Bluetooth service disconnected.");
+		}
+	};
+    
+    
+    class StartBluetoothService extends AsyncTask<Void, Void, Boolean> {
+
+		@Override
+		protected Boolean doInBackground(Void... params) {
+
+			Intent intent = new Intent(BluetoothDeviceManagerActivity.this, BluetoothService.class); 
+			startService(intent);
+			
+			boolean isBounded = bindService(intent, 
+	        		connection, Context.BIND_AUTO_CREATE);
+		
+			Log.i(TAG, "Bluetooth service started: " + isBounded);
+			
+			return Boolean.valueOf(isBounded);
+		}
+    	
+		@Override
+		protected void onPostExecute(Boolean b) {
+			// Succeeded
+			if (b.booleanValue()) {
+				Log.i(TAG, "Bluetooth service bounded.");
+			} else {
+				Log.e(TAG, "Bluetooth service failed to bind.");
+			}
+		}
+    }
+    
+    
+    
+    
+    // TODO move to activity for connecting bluetooth devices
+    // only allow connection for registered plugins
     private class AcceptConnectionTask extends AsyncTask<Void, String, Void> {
 
     	private final BtConnection connection;
     	
     	AcceptConnectionTask() throws IOException {
     		connection = new BtConnection(
-    				BluetoothDeviceManagerActivity.this,
-    				0,
+    				null,
     				getString(R.string.app_name),
     				UUID.fromString(getString(R.string.uuid)));  
     	}
@@ -171,6 +194,9 @@ public class BluetoothDeviceManagerActivity extends Activity implements IBtConne
 		}
 		
     }
+    
+    
+    
 
     private class ReaderTask extends AsyncTask<Void, Void, Void> {
     	private final BtConnection connection;
