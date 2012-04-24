@@ -79,10 +79,6 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
     	// and the register button is only visible when a connection has been 
     	// binded with ConnectionService. However, null is checked just to be safe.
     	Log.i(TAG, "registering");
-
-    	if (connectionService != null) {
-    		connectionService.registerPlugin();
-    	}
     }
     
     private void updateStatus(final String msg) {

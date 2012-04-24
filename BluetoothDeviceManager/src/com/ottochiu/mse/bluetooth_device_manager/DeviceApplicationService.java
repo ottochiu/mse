@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -16,8 +17,9 @@ import android.util.Log;
 
 public class DeviceApplicationService extends Service {
 
+	public static final String ACTION_START_REGISTRATION = "com.ottochiu.mse.bluetooth_device_manager.ACTION_START_REGISTRATION";
+	
 	private static final String TAG = "DeviceApplicationService";
-	private final RegisteredDevices devices = new RegisteredDevices(this);
 	
 	private final IDeviceApplicationService.Stub binder = new IDeviceApplicationService.Stub() {		
 		@Override
@@ -27,8 +29,8 @@ public class DeviceApplicationService extends Service {
 				String packageName,
 				IBluetoothReadCallback callback) throws RemoteException {
 
-			devices.registerDevice(deviceName, uuid.getUuid(), packageName);
-			bluetoothService.reserveConnection(deviceName, uuid.getUuid(), callback);
+			Log.i(TAG, "Registering " + deviceName);
+			bluetoothService.registerDevice(deviceName, uuid, packageName, callback);
 		}
 
 		@Override
@@ -104,7 +106,11 @@ public class DeviceApplicationService extends Service {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			Log.i(TAG, "Bluetooth Service connected");
-			bluetoothService = ((BluetoothService.BtBinder) service).getService();			
+			bluetoothService = ((BluetoothService.BtBinder) service).getService();
+			
+			Log.i(TAG, "Broadcasting ACTION_START_REGISTRATION");
+			Intent intent = new Intent(ACTION_START_REGISTRATION);
+			sendBroadcast(intent);
 		}
 
 		@Override

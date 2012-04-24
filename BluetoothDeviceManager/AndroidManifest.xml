@@ -24,6 +24,7 @@
         <service android:name=".DeviceApplicationService">
             <intent-filter>
                 <action android:name="com.ottochiu.mse.bluetooth_device_manager.IDeviceApplicationService" />
+                <action android:name="com.ottochiu.mse.bluetooth_device_manager.ACTION_START_REGISTRATION" />
             </intent-filter>
         </service>
 

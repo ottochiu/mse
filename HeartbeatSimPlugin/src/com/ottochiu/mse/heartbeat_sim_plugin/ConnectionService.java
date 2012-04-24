@@ -3,12 +3,13 @@ package com.ottochiu.mse.heartbeat_sim_plugin;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.LongBuffer;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -45,6 +46,8 @@ public class ConnectionService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "Started");
+		new RegisterPluginTask().execute();
+		
 		return START_STICKY;
 	}
 	
@@ -57,6 +60,9 @@ public class ConnectionService extends Service {
 		}
 	}
 	
+	public IBluetoothReadCallback getHandler() {
+		return handler;
+	}
 	
 	////////////////////////////////////////////
 	// To support services provided to activity
@@ -71,12 +77,6 @@ public class ConnectionService extends Service {
 		}
 	}
 
-	// interface exposed to activity
-	
-	void registerPlugin() {
-		new RegisterPluginTask().execute();
-	}
-	
 	void appendStatus(String msg) {
 		status += msg + "\n";
 	}
@@ -110,25 +110,26 @@ public class ConnectionService extends Service {
 	    		
 	    		Log.i(TAG, "Service bounded: " + isBounded);
 	    		
-	    		return Boolean.valueOf(isBounded);  
-	    		
+	    		return Boolean.valueOf(isBounded);
+
 	    	} else {
-	    		Log.i(TAG, "registering device");
-	    		
-	        	try {
-	        		String deviceName = getString(R.string.app_name);
-	        		
-	        		applicationService.registerDevice(
-	        				deviceName,
-	        				ParcelUuid.fromString(getString(R.string.uuid)),
-	        				HeartbeatSimulatorPluginActivity.class.getPackage().getName(),
-	        				handler);
-	        		
-	        		return Boolean.TRUE;
-	        		
-	    		} catch (RemoteException e) {
-	    			return Boolean.FALSE;	    			
-	    		}
+
+		    	Log.i(TAG, "registering device");
+
+		    	try {
+		    		String deviceName = getString(R.string.app_name);
+
+		    		applicationService.registerDevice(
+		    				deviceName,
+		    				ParcelUuid.fromString(getString(R.string.uuid)),
+		    				HeartbeatSimulatorPluginActivity.class.getPackage().getName(),
+		    				handler);
+
+		    		return Boolean.TRUE;
+
+		    	} catch (RemoteException e) {
+		    		return Boolean.FALSE;	    			
+		    	}
 	    	}
 		}
 		
@@ -158,6 +159,20 @@ public class ConnectionService extends Service {
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			updateStatus("Service connected.");
 			applicationService = IDeviceApplicationService.Stub.asInterface(service);
+			
+	    	try {
+	    		String deviceName = getString(R.string.app_name);
+
+	    		applicationService.registerDevice(
+	    				deviceName,
+	    				ParcelUuid.fromString(getString(R.string.uuid)),
+	    				HeartbeatSimulatorPluginActivity.class.getPackage().getName(),
+	    				handler);
+	    	} catch (RemoteException e) {
+	    	}
+			
+			IntentFilter filter = new IntentFilter("com.ottochiu.mse.bluetooth_device_manager.START_REGISTRATION");
+			registerReceiver(appServiceReceiver, filter);
 		}
 
 		@Override
@@ -191,6 +206,27 @@ public class ConnectionService extends Service {
 
 			} catch (BufferUnderflowException e) {
 				// not an error
+			}
+		}
+	};
+	
+	//////////// BroadcastReceiver ////////////
+	BroadcastReceiver appServiceReceiver = new BroadcastReceiver() {
+		
+		@Override
+		public void onReceive(Context context, Intent intent) {
+
+			if (intent.getAction().equals("com.ottochiu.mse.bluetooth_device_manager.START_REGISTRATION")) {
+		    	try {
+
+		    		Log.i(TAG, "Responding to register request");
+		    		applicationService.registerDevice(
+		    				getString(R.string.app_name),
+		    				ParcelUuid.fromString(getString(R.string.uuid)),
+		    				HeartbeatSimulatorPluginActivity.class.getPackage().getName(),
+		    				handler);
+		    	} catch (RemoteException e) {
+		    	}
 			}
 		}
 	};

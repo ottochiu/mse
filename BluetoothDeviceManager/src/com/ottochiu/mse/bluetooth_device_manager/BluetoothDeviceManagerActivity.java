@@ -1,6 +1,8 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 
 import java.io.IOException;
+import java.util.Hashtable;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 import android.app.Activity;
@@ -15,24 +17,26 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioGroup;
 import android.widget.TableLayout;
+import android.widget.TableRow;
+import android.widget.TableRow.LayoutParams;
 import android.widget.TextView;
 
 public class BluetoothDeviceManagerActivity extends Activity {
 	private static final String TAG = "BluetoothDeviceManagerActivity";
 	private static final int REQUEST_BT_ENABLE = 1;
 
-	BluetoothAdapter btAdapter;
-//	Button mListen;
-//	TextView mStatus;
-//	ScrollView scrollView;
 	RadioGroup btControl;
 	TableLayout connectionTable;
 	TextView btStatus;
 	TextView status;
+	
+	// device name -> tr
+	Hashtable<String, TableRow> rowHash = new Hashtable<String, TableRow>();
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +48,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
         btStatus = (TextView) findViewById(R.id.btStatus);
         status = (TextView) findViewById(R.id.status);
         
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
         
         if (btAdapter == null) {
         	updateStatus("Bluetooth not available on this device.");
@@ -56,6 +60,8 @@ public class BluetoothDeviceManagerActivity extends Activity {
         }
         else {
         	
+        	new StartBluetoothService().execute();
+        	
         	if (btAdapter.isEnabled()) {
         		btControl.check(R.id.bluetoothOn);
         		btStatus.setText("Bluetooth is ON");
@@ -63,8 +69,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
         		btControl.check(R.id.bluetoothOff);
         		btStatus.setText("Bluetooth is OFF");        		
         	}
-        	
-        	new StartBluetoothService().execute();
+
         }
     }
     
@@ -80,49 +85,108 @@ public class BluetoothDeviceManagerActivity extends Activity {
     	bluetoothService.setEnable(btControl.getCheckedRadioButtonId() == R.id.bluetoothOn);
     }
     
-    
-    
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 		
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if (intent.getAction().equals(BluetoothService.ACTION_LOG)) {
+			String action = intent.getAction();
+			
+			if (action.equals(BluetoothService.ACTION_LOG)) {
                 String msg = intent.getStringExtra(BluetoothService.EXTRA_MESSAGE);
                 
                 updateStatus(msg);
                 
-			} else if (intent.getAction().equals(BluetoothService.ACTION_BT_STATUS)) {
-                String msg = intent.getStringExtra(BluetoothService.EXTRA_BT_STATUS);
+			} else if (action.equals(BluetoothService.ACTION_BT_STATUS)) {
+                int status = intent.getIntExtra(BluetoothService.EXTRA_BT_STATUS, BluetoothAdapter.ERROR);
                 
-                btStatus.setText(msg);
+				String connectionStatus = "Bluetooth is ";
+                switch (status) {
+                case BluetoothAdapter.STATE_OFF:
+                	connectionStatus += "OFF";
+                	break;
+                case BluetoothAdapter.STATE_ON:
+                	connectionStatus += "ON";
+                	break;
+                case BluetoothAdapter.STATE_TURNING_OFF:
+                	connectionStatus += "TURNING OFF";
+                	break;
+                case BluetoothAdapter.STATE_TURNING_ON:
+                	connectionStatus += "TURNING ON";
+                	break;
+                default:
+                	connectionStatus = "Bluetooth error";
+                	break;
+                }
+                
+                updateStatus(connectionStatus);
+                btStatus.setText(connectionStatus);
+                
+			} else if (action.equals(BluetoothService.ACTION_REGISTERED_NEW_DEVICE)) {
+				updateDeviceList();
 			}
 		}
 	};
-    
-    
-    
-    
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    	// Check for the correct intent
-    	if (requestCode == REQUEST_BT_ENABLE) {
-    		if (resultCode == Activity.RESULT_OK) {
-    			updateStatus("Bluetooth enabled.");
-    			btAdapter.setName(getString(R.string.app_name));
 
-//    			try {
-//					new AcceptConnectionTask().execute();
-//				} catch (IOException e) {
-//            		updateStatus("Failed to open Bluetooth communication channel: " + e.getMessage());
-//            		mListen.setEnabled(true);
-//				}
-    			
+	private void updateDeviceList() {
+    	Hashtable<String, BtConnection> connections = 
+    			bluetoothService.getBtConnections();
+
+    	Log.i(TAG, String.valueOf(connections.size()) + " registered devices");
+    	
+    	// Enumerate and display the registered devices
+    	for (Entry<String, BtConnection> entry : connections.entrySet()) {
+
+    		String entryName = entry.getKey();
+    		String[] names = entryName.split(",");
+    		BtConnection btConn = entry.getValue();
+    		
+    		TableRow tr = rowHash.get(entryName);
+    		
+    		// Never been displayed before
+    		if (tr == null) {
+        		Log.i(TAG, "Adding new row: " + names[1]);
+        		
+        		tr = new TableRow(this);
+        		tr.setLayoutParams(new LayoutParams(
+        				LayoutParams.FILL_PARENT,
+        				LayoutParams.WRAP_CONTENT));
+
+        		TextView tv = new TextView(this);
+        		tv.setText(names[1]);
+        		tr.addView(tv);
+        		
+        		tv = new TextView(this);
+        		tv.setText(btConn.isConnected() ? "Connected" : "Disconnected");
+        		tv.setGravity(Gravity.CENTER);
+        		tr.addView(tv);
+        		
+        		tv = new TextView(this);
+        		tv.setText(btConn.isConnected() ? "Disconnect" : "Connect");
+        		tr.addView(tv);
+
+        		connectionTable.addView(tr, new TableLayout.LayoutParams(
+        				LayoutParams.FILL_PARENT,
+        				LayoutParams.WRAP_CONTENT));
+        		rowHash.put(entryName, tr);
+        		
     		} else {
-    			updateStatus("Bluetooth NOT enabled.");
-    			btControl.check(R.id.bluetoothOff);
-//    			mListen.setEnabled(true);
+    			
+    			// Been displayed
+    			Log.i(TAG, "Updating displayed row");
+    			
+    			TextView tv = (TextView) tr.getChildAt(0);
+    			tv.setText(names[1]);
+    			
+    			tv = (TextView) tr.getChildAt(1);
+        		tv.setText(btConn.isConnected() ? "Connected" : "Disconnected");
+        		
+    			tv = (TextView) tr.getChildAt(2);
+        		tv.setText(btConn.isConnected() ? "Disconnect" : "Connect");        		
     		}
+    		
+
     	}
-    }
+	}
     
     
     private void updateStatus(final String msg) {
@@ -150,15 +214,18 @@ public class BluetoothDeviceManagerActivity extends Activity {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
+			Log.i(TAG, "Bluetooth service connected.");
+
 			bluetoothService = ((BluetoothService.BtBinder) service).getService();
 
 			IntentFilter filter = new IntentFilter();
 			filter.addAction(BluetoothService.ACTION_LOG);
 			filter.addAction(BluetoothService.ACTION_BT_STATUS);
+			filter.addAction(BluetoothService.ACTION_REGISTERED_NEW_DEVICE);
 			
 	        registerReceiver(broadcastReceiver, filter);
-			
-			Log.i(TAG, "Bluetooth service connected.");
+
+    		updateDeviceList();
 		}
 
 		@Override

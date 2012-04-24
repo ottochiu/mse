@@ -1,6 +1,7 @@
 package com.ottochiu.mse.bluetooth_device_manager;
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.UUID;
 
 import android.app.Service;
@@ -11,6 +12,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.ParcelUuid;
 import android.util.Log;
 
 
@@ -22,10 +24,13 @@ public class BluetoothService extends Service {
 	public static final String ACTION_BT_STATUS = "com.ottochiu.mse.bluetooth_device_manager.ACTION_BT_STATUS";
 	public static final String EXTRA_BT_STATUS = "EXTRA_BT_STATUS";
 	
+	public static final String ACTION_REGISTERED_NEW_DEVICE = "com.ottochiu.mse.bluetooth_device_manager.ACTION_REGISTERED_NEW_DEVICE";
+	
 	private static final String TAG = "Bluetooth Service";
 	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-			
-	private Hashtable<String, BtConnection> connections;
+
+//	private final RegisteredDevices devices = new RegisteredDevices(this);
+	private final Hashtable<String, BtConnection> connections = new Hashtable<String, BtConnection>();
 	private Binder binder = new BtBinder();
 	
 	@Override
@@ -35,9 +40,27 @@ public class BluetoothService extends Service {
 	}
 	
 	
+	// Assumes caller has already checked that BluetoothAdapter is not null
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "Start BluetoothService");
+
+		// TODO: remove
+//		List<RegisteredDevices.Device> deviceList = devices.getRegisteredDevices();
+//		
+//		for (RegisteredDevices.Device d : deviceList) {
+//			try {
+//				connections.put(
+//						d.pkgName + "," + d.deviceName,
+//						
+//						// TODO: NO CALLBACK???
+//						new BtConnection(null, d.deviceName, d.uuid));
+//			} catch (IOException e) {
+//				Log.e(TAG, e.getMessage());
+//			}
+//		}
+		
+		btAdapter.setName(getString(R.string.app_name));
 		
 		IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(broadcastReceiver, filter);
@@ -81,16 +104,28 @@ public class BluetoothService extends Service {
     	}
 	}
 	
-	public void reserveConnection(String deviceName, UUID uuid, IBluetoothReadCallback callback)
-	{
-		// Will overwrite UUID if the same deviceName is used
+	public void registerDevice(
+			String deviceName,
+			ParcelUuid uuid,
+			String packageName,
+			IBluetoothReadCallback callback) {
+
+		// Will overwrite UUID if the same deviceName exists
+// TODO		devices.registerDevice(deviceName, uuid.getUuid(), packageName);
+
 		try {
 			connections.put(
-					deviceName,
-					new BtConnection(callback, deviceName, uuid));
+					packageName + "," + deviceName,
+					new BtConnection(callback, deviceName, uuid.getUuid()));
+			
+			sendBroadcast(new Intent(ACTION_REGISTERED_NEW_DEVICE));
 		} catch (IOException e) {
 			Log.e(TAG, e.getMessage());
 		}
+	}
+	
+	public Hashtable<String, BtConnection> getBtConnections() {
+		return connections;
 	}
 	
 	public BtConnection getBtConnection(String deviceName) {
@@ -110,28 +145,12 @@ public class BluetoothService extends Service {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-				
-				String connectionStatus = "Bluetooth is ";
-                switch (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
-                case BluetoothAdapter.STATE_OFF:
-                	connectionStatus += "OFF";
-                	break;
-                case BluetoothAdapter.STATE_ON:
-                	connectionStatus += "ON";
-                	break;
-                case BluetoothAdapter.STATE_TURNING_OFF:
-                	connectionStatus += "TURNING OFF";
-                	break;
-                case BluetoothAdapter.STATE_TURNING_ON:
-                	connectionStatus += "TURNING ON";
-                	break;
-                default:
-                	connectionStatus = "Bluetooth error";
-                	break;
-                }
-                
+
+				// Simply rebroadcast status
                 Intent statusIntent = new Intent(ACTION_BT_STATUS);
-                statusIntent.putExtra(EXTRA_BT_STATUS, connectionStatus);
+                statusIntent.putExtra(
+                		EXTRA_BT_STATUS,
+                		intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR));
                 
                 sendBroadcast(statusIntent);
 			}

@@ -58,23 +58,18 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true" />
+
+    
     
     <TableLayout
         android:id="@+id/connectionTable"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:stretchColumns="1"
         android:layout_below="@id/bluetoothGroup"
-        android:layout_above="@id/status"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:visibility="invisible" >
+        android:layout_above="@id/status">
 
-        <TableRow
-            android:id="@+id/tableRow1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="10sp" >
-            
+        <TableRow>
             <TextView
                 android:id="@+id/colDeviceName"
                 android:layout_weight="5"
@@ -96,6 +91,10 @@
                 android:text="@string/colConnectionOption"
                 android:textStyle="bold" />            
         </TableRow>
+        
+        <View
+                android:layout_height="2dip"
+                android:background="#6666FF" />
         
     </TableLayout>
     

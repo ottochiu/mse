@@ -18,7 +18,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".ConnectionService" android:exported="false" />
+        <service android:name=".ConnectionService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.ottochiu.mse.bluetooth_device_manager.ACTION_START_REGISTRATION" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
