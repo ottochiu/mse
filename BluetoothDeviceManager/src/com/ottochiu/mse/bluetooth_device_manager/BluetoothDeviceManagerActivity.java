@@ -28,7 +28,6 @@ import android.widget.TextView;
 
 public class BluetoothDeviceManagerActivity extends Activity {
 	private static final String TAG = "BluetoothDeviceManagerActivity";
-	private static final int REQUEST_BT_ENABLE = 1;
 
 	RadioGroup btControl;
 	TableLayout connectionTable;
@@ -86,7 +85,16 @@ public class BluetoothDeviceManagerActivity extends Activity {
     }
     
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-		
+
+    	private void enableButtons(boolean enable) {
+        	for (int i = 0; i < connectionTable.getChildCount(); i++) {
+        		try {
+        			TableRow row = (TableRow) connectionTable.getChildAt(i);
+        			row.getChildAt(2).setEnabled(enable);
+        		} catch (ClassCastException e) {}
+        	}
+    	}
+    	
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
@@ -103,12 +111,18 @@ public class BluetoothDeviceManagerActivity extends Activity {
                 switch (status) {
                 case BluetoothAdapter.STATE_OFF:
                 	connectionStatus += "OFF";
+                	enableButtons(false);
+                	
                 	break;
                 case BluetoothAdapter.STATE_ON:
                 	connectionStatus += "ON";
+                	enableButtons(true);
+                	
                 	break;
                 case BluetoothAdapter.STATE_TURNING_OFF:
                 	connectionStatus += "TURNING OFF";
+                	enableButtons(false);
+                	
                 	break;
                 case BluetoothAdapter.STATE_TURNING_ON:
                 	connectionStatus += "TURNING ON";
@@ -126,6 +140,16 @@ public class BluetoothDeviceManagerActivity extends Activity {
 			}
 		}
 	};
+	
+	private void updateConnectionStatus(BtConnection conn) {
+		TableRow tr = rowHash.get(conn.getName());
+		
+		TextView tv = (TextView) tr.getChildAt(1);
+		tv.setText(conn.isConnected() ? "Connected" : "Disconnected");
+		
+		Button button = (Button) tr.getChildAt(2);
+		button.setText(conn.isConnected() ? "Disconnect" : "Connect");
+	}
 
 	private void updateDeviceList() {
     	Hashtable<String, BtConnection> connections = 
@@ -138,7 +162,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
 
     		String entryName = entry.getKey();
     		String[] names = entryName.split(",");
-    		BtConnection btConn = entry.getValue();
+    		final BtConnection btConn = entry.getValue();
     		
     		TableRow tr = rowHash.get(entryName);
     		
@@ -156,18 +180,46 @@ public class BluetoothDeviceManagerActivity extends Activity {
         		tr.addView(tv);
         		
         		tv = new TextView(this);
-        		tv.setText(btConn.isConnected() ? "Connected" : "Disconnected");
         		tv.setGravity(Gravity.CENTER);
         		tr.addView(tv);
         		
-        		tv = new TextView(this);
-        		tv.setText(btConn.isConnected() ? "Disconnect" : "Connect");
-        		tr.addView(tv);
+        		Button button = new Button(this);
+        		button.setEnabled(BluetoothAdapter.getDefaultAdapter().isEnabled());
+                button.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                    	Button b = (Button) v;
+                    	BtConnection conn = btConn;
+                    	
+                		try {
+                			
+                			if (b.getText().toString().equals("Connect")) {
+
+                				try {
+                					new AcceptConnectionTask(conn).execute();
+                				} catch (NumberFormatException e) {
+                					Log.wtf(TAG,  e.getMessage());
+                					e.printStackTrace();
+                				}
+
+                			} else {
+                				conn.close();
+                				updateConnectionStatus(conn);
+                			}
+                    		
+						} catch (IOException e) {
+							Log.i(TAG, e.getLocalizedMessage());							
+						}
+                    }
+                });
+
+        		tr.addView(button);
 
         		connectionTable.addView(tr, new TableLayout.LayoutParams(
         				LayoutParams.FILL_PARENT,
         				LayoutParams.WRAP_CONTENT));
         		rowHash.put(entryName, tr);
+
+        		updateConnectionStatus(btConn);
         		
     		} else {
     			
@@ -177,11 +229,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
     			TextView tv = (TextView) tr.getChildAt(0);
     			tv.setText(names[1]);
     			
-    			tv = (TextView) tr.getChildAt(1);
-        		tv.setText(btConn.isConnected() ? "Connected" : "Disconnected");
-        		
-    			tv = (TextView) tr.getChildAt(2);
-        		tv.setText(btConn.isConnected() ? "Disconnect" : "Connect");        		
+    			updateConnectionStatus(btConn);
     		}
     		
 
@@ -266,21 +314,16 @@ public class BluetoothDeviceManagerActivity extends Activity {
     
     
     
-    // TODO move to activity for connecting bluetooth devices
-    // only allow connection for registered plugins
-    private class AcceptConnectionTask extends AsyncTask<Void, String, Void> {
+    private class AcceptConnectionTask extends AsyncTask<Void, String, Boolean> {
 
     	private final BtConnection connection;
     	
-    	AcceptConnectionTask() throws IOException {
-    		connection = new BtConnection(
-    				null,
-    				getString(R.string.app_name),
-    				UUID.fromString(getString(R.string.uuid)));  
+    	AcceptConnectionTask(final BtConnection conn) {
+    		connection = conn;  
     	}
     	
 		@Override
-		protected Void doInBackground(Void... params) {
+		protected Boolean doInBackground(Void... params) {
 			
 			try {
 				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
@@ -291,19 +334,23 @@ public class BluetoothDeviceManagerActivity extends Activity {
 				connection.open(Integer.parseInt(getString(R.string.connection_timeout)));
 				
 				updateStatus("Connection opened");
+				return Boolean.TRUE;
 				
 			} catch (IOException e) {
 				updateStatus(e.getMessage());
+				return Boolean.FALSE;
 			}
-			
-			return null;
 		}
     	
 		@Override
-		protected void onPostExecute(Void param) {
-			new ReaderTask(connection).execute();
-			
-//			mListen.setEnabled(true);
+		protected void onPostExecute(Boolean param) {
+			if (param.booleanValue()) {
+				Log.i(TAG, "Starting reader task");
+				
+				updateConnectionStatus(connection);
+				
+				new ReaderTask(connection).execute();
+			}
 		}
 
 		@Override
@@ -315,9 +362,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
 				Log.i(TAG, "Error closing Bluetooth connection.");
 			}
 		}
-		
     }
-    
     
     
 

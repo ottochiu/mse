@@ -36,12 +36,17 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			connectionService = ((ConnectionService.ConnectionServiceBinder) service).getService();
+			
+	        IntentFilter filter = new IntentFilter(ConnectionService.STATUS_UPDATE);
+	        registerReceiver(connectionServiceReceiver, filter);
+			
 			status.setText(connectionService.getStatus());
 			registerButton.setVisibility(View.VISIBLE);
 		}
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
+	        unregisterReceiver(connectionServiceReceiver);
 			connectionService = null;
 		}
 	};
@@ -56,19 +61,16 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
         status = (TextView) findViewById(R.id.status);
         registerButton = (Button) findViewById(R.id.registerButton);
         
-        IntentFilter filter = new IntentFilter(ConnectionService.STATUS_UPDATE);
-        registerReceiver(connectionServiceReceiver, filter);
-        
         new StartConnectionService().execute();
     }
     
     @Override
-    protected void onStop() {
-    	super.onStop();
+    protected void onDestroy() {
+    	super.onDestroy();
     	
     	if (connectionService != null) {
-    		unbindService(connection);
     		unregisterReceiver(connectionServiceReceiver);
+    		unbindService(connection);
     	}
     }
     

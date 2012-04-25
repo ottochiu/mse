@@ -18,6 +18,7 @@ class BtConnection {
 	private static final String TAG = "BtConnection";
 	private static final int HEADER_SIZE = Integer.SIZE / 8;
 	
+	private final String packageName;
 	private final String deviceName;
 	private final IBluetoothReadCallback callback;
 	private final UUID uuid;
@@ -29,28 +30,18 @@ class BtConnection {
 
 	BtConnection(
 			IBluetoothReadCallback callback,
+			String packageName,
 			String deviceName,
-			UUID uuid)
-			throws IOException {
+			UUID uuid) {
 		
+		this.packageName = packageName;
 		this.deviceName = deviceName;
 		this.callback = callback;
 		this.uuid = uuid;
-		
-		// open the server socket for listening.
-		// Do not make the server socket static.  Otherwise, all accept() will happen in a serial fashion.
-		serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);
-		
-		// Test whether the connection is opened
-		try {
-			// If available() does not throw IOException, then it socket is connected.
-			socket.getInputStream().available();
-			isConnected = true;
-		} catch (NullPointerException e) {
-			// isConnected = false;
-		} catch (IOException e) {
-			// isConnected = false;
-		}
+	}
+	
+	String getName() {
+		return packageName + "," + deviceName;
 	}
 	
 	void close() throws IOException {
@@ -61,6 +52,27 @@ class BtConnection {
 	
 	void open(int timeout) throws IOException {
 		Log.i(TAG, "listening on server");
+		
+		// Test whether the connection is opened
+		try {
+			// If available() does not throw IOException, then its socket is connected.
+			socket.getInputStream().available();
+
+			Log.i(TAG, deviceName + " already connected.");
+			isConnected = true;
+			return;
+		} catch (NullPointerException e) {
+			// isConnected = false;
+		} catch (IOException e) {
+			// isConnected = false;
+		}
+		
+		Log.i(TAG, deviceName + " accepting socket connection");
+
+		Log.i(TAG, "Listening to " + deviceName + " UUID: " + uuid.toString());		
+		// open the server socket for listening.
+		// Do not make the server socket static.  Otherwise, all accept() will happen in a serial fashion.
+		serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);
 		
 		// Blocks
 		socket = serverSocket.accept(timeout);

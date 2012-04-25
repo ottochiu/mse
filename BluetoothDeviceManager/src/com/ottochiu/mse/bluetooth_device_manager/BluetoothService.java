@@ -29,7 +29,6 @@ public class BluetoothService extends Service {
 	private static final String TAG = "Bluetooth Service";
 	private final BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
-//	private final RegisteredDevices devices = new RegisteredDevices(this);
 	private final Hashtable<String, BtConnection> connections = new Hashtable<String, BtConnection>();
 	private Binder binder = new BtBinder();
 	
@@ -45,21 +44,6 @@ public class BluetoothService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "Start BluetoothService");
 
-		// TODO: remove
-//		List<RegisteredDevices.Device> deviceList = devices.getRegisteredDevices();
-//		
-//		for (RegisteredDevices.Device d : deviceList) {
-//			try {
-//				connections.put(
-//						d.pkgName + "," + d.deviceName,
-//						
-//						// TODO: NO CALLBACK???
-//						new BtConnection(null, d.deviceName, d.uuid));
-//			} catch (IOException e) {
-//				Log.e(TAG, e.getMessage());
-//			}
-//		}
-		
 		btAdapter.setName(getString(R.string.app_name));
 		
 		IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
@@ -111,17 +95,11 @@ public class BluetoothService extends Service {
 			IBluetoothReadCallback callback) {
 
 		// Will overwrite UUID if the same deviceName exists
-// TODO		devices.registerDevice(deviceName, uuid.getUuid(), packageName);
+		connections.put(
+				packageName + "," + deviceName,
+				new BtConnection(callback, packageName, deviceName, uuid.getUuid()));
 
-		try {
-			connections.put(
-					packageName + "," + deviceName,
-					new BtConnection(callback, deviceName, uuid.getUuid()));
-			
-			sendBroadcast(new Intent(ACTION_REGISTERED_NEW_DEVICE));
-		} catch (IOException e) {
-			Log.e(TAG, e.getMessage());
-		}
+		sendBroadcast(new Intent(ACTION_REGISTERED_NEW_DEVICE));
 	}
 	
 	public Hashtable<String, BtConnection> getBtConnections() {

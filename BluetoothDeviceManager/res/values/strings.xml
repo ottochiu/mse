@@ -2,7 +2,6 @@
 <resources>
 
     <string name="app_name">Bluetooth Device Manager</string>
-    <string name="uuid">9612f487-8757-4531-9fb0-b01eeb3686db</string>
     <string name="connection_timeout">15000</string> <!-- specified in ms -->
     <string name="colDeviceName">Device Name</string>
     <string name="colConnectionStatus">Status</string>

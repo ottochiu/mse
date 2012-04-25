@@ -31,12 +31,11 @@ public final class R {
     }
     public static final class string {
         public static final int app_name=0x7f040000;
-        public static final int colConnectionOption=0x7f040005;
-        public static final int colConnectionStatus=0x7f040004;
+        public static final int colConnectionOption=0x7f040004;
+        public static final int colConnectionStatus=0x7f040003;
         /**  specified in ms 
          */
-        public static final int colDeviceName=0x7f040003;
-        public static final int connection_timeout=0x7f040002;
-        public static final int uuid=0x7f040001;
+        public static final int colDeviceName=0x7f040002;
+        public static final int connection_timeout=0x7f040001;
     }
 }

@@ -1,8 +1,18 @@
 package com.ottochiu.mse.heartbeat_sim_plugin;
 
+import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -163,6 +173,8 @@ public class ConnectionService extends Service {
 	    	try {
 	    		String deviceName = getString(R.string.app_name);
 
+	    		Log.i(TAG, "Registering " + deviceName);
+	    		
 	    		applicationService.registerDevice(
 	    				deviceName,
 	    				ParcelUuid.fromString(getString(R.string.uuid)),
@@ -178,6 +190,8 @@ public class ConnectionService extends Service {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			updateStatus("Service disconnected");
+
+			unregisterReceiver(appServiceReceiver);
 			applicationService = null;
 		}
 	};
@@ -187,26 +201,53 @@ public class ConnectionService extends Service {
 
 	/////////////// Callback ///////////////////
 	private IBluetoothReadCallback.Stub handler = new IBluetoothReadCallback.Stub() {
-		
 		@Override
 		public void handle(byte[] data) throws RemoteException {
 			Log.i(TAG, "received data: " + data.length + " bytes");
 			
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.LITTLE_ENDIAN);
+
+			String timestamp = "";
+			String joinedIntervals = "";
 			
 			try {
 				byte[] str = new byte[buf.getInt()];
 				buf.get(str);
-				updateStatus("Start timestamp: " + new String(str));
+				
+				timestamp = new String(str);
+				updateStatus("Start timestamp: " + timestamp);
 				
 				while (true) {
-					updateStatus(buf.getLong() + " ms");
+					long vti = buf.getLong();
+					
+					joinedIntervals += Long.toString(vti) + ",";
+					updateStatus(vti + " ms");
 				}
 
 			} catch (BufferUnderflowException e) {
 				// not an error
 			}
+			
+			try {
+		        joinedIntervals = joinedIntervals.substring(0, joinedIntervals.length()-1); // can throw IndexOutOfBoundsException
+		        
+		        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+		        nameValuePairs.add(new BasicNameValuePair("start_time", timestamp));
+		        nameValuePairs.add(new BasicNameValuePair("intervals", joinedIntervals));
+		        HttpPost post = new HttpPost(getString(R.string.url));
+		        post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+		        new DefaultHttpClient().execute(post);
+		        
+	            updateStatus("Data transmission completed");
+	            
+		    } catch (IndexOutOfBoundsException e) {
+		    	updateStatus("No data transmitted");
+		    } catch (ClientProtocolException e) {
+		    	updateStatus("Client protocol failed");
+		    } catch (IOException e) {
+		    	updateStatus("IO failed");
+		    }
 		}
 	};
 	

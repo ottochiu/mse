@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Heartbeat Simulator Plugin</string>
-    <string name="uuid">b7081f20-082c-4ab3-95f0-07c85103a4af</string>
+    <string name="uuid">9612f487-8757-4531-9fb0-b01eeb3686db</string>
+    <string name="url">http://ottochiu.vaelen.org/mse/heartrate_input.php</string>
 </resources>
