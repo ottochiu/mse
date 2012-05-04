@@ -67,9 +67,11 @@ class BtConnection {
 			// isConnected = false;
 		}
 		
+		// Can only get here when socket is not already connected.
+		
 		Log.i(TAG, deviceName + " accepting socket connection");
-
-		Log.i(TAG, "Listening to " + deviceName + " UUID: " + uuid.toString());		
+		Log.i(TAG, "Listening to " + deviceName + " UUID: " + uuid.toString());
+		
 		// open the server socket for listening.
 		// Do not make the server socket static.  Otherwise, all accept() will happen in a serial fashion.
 		serverSocket = btAdapter.listenUsingRfcommWithServiceRecord(deviceName, uuid);
@@ -94,6 +96,7 @@ class BtConnection {
 		headerBuf.order(ByteOrder.LITTLE_ENDIAN);
 		
 		// Keep reading until somebody closes the connection.
+		// This assumes that the transmitted data can be fit within a single packets
 		while (true) {
 			Log.i(TAG, "Reading for " + deviceName);
 			

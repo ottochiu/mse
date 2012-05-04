@@ -18,7 +18,7 @@ import android.util.Log;
 public class DeviceApplicationService extends Service {
 
 	public static final String ACTION_START_REGISTRATION = "com.ottochiu.mse.bluetooth_device_manager.ACTION_START_REGISTRATION";
-	
+
 	private static final String TAG = "DeviceApplicationService";
 	
 	private final IDeviceApplicationService.Stub binder = new IDeviceApplicationService.Stub() {		
@@ -108,6 +108,13 @@ public class DeviceApplicationService extends Service {
 			Log.i(TAG, "Bluetooth Service connected");
 			bluetoothService = ((BluetoothService.BtBinder) service).getService();
 			
+			// Once the BluetoothService is started, broadcast to all running Plugins asking them
+			// to register with the manager.
+			//
+			// The original design was to have the Plugins register once and save the information in 
+			// a local SQLite database. However, if the user uninstalls a particular Plugin or if the
+			// Plugin is not running, then it is difficult for the Manager to determine the connection
+			// status.
 			Log.i(TAG, "Broadcasting ACTION_START_REGISTRATION");
 			Intent intent = new Intent(ACTION_START_REGISTRATION);
 			sendBroadcast(intent);

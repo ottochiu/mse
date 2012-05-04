@@ -13,12 +13,13 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class HeartbeatSimulatorPluginActivity extends Activity {
 	private static final String TAG = "HeartbeatSimulatorPluginActivity";
 	private TextView status;
-	private Button registerButton;
+	private ScrollView scrollView;
 	
 	private BroadcastReceiver connectionServiceReceiver = new BroadcastReceiver() {
 		
@@ -40,8 +41,18 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
 	        IntentFilter filter = new IntentFilter(ConnectionService.STATUS_UPDATE);
 	        registerReceiver(connectionServiceReceiver, filter);
 			
+	        // Cannot call updateStatus, otherwise the service will
+	        // append the message to its buffer again
 			status.setText(connectionService.getStatus());
-			registerButton.setVisibility(View.VISIBLE);
+			
+	    	// Then scroll the view to the bottom
+	    	scrollView.post(new Runnable() {
+
+				@Override
+				public void run() {
+					scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+				}
+			});
 		}
 
 		@Override
@@ -59,8 +70,7 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
         setContentView(R.layout.main);
         
         status = (TextView) findViewById(R.id.status);
-        registerButton = (Button) findViewById(R.id.registerButton);
-        
+        scrollView = (ScrollView) findViewById(R.id.scrollView);
         new StartConnectionService().execute();
     }
     
@@ -75,15 +85,9 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
     }
     
     
-    public void registerPlugin(View v) {
-    	
-    	// This can only be called when the user clicks on the register button
-    	// and the register button is only visible when a connection has been 
-    	// binded with ConnectionService. However, null is checked just to be safe.
-    	Log.i(TAG, "registering");
-    }
-    
     private void updateStatus(final String msg) {
+    	
+    	// First update the status
     	runOnUiThread(new Runnable() {
 
 			@Override
@@ -91,7 +95,9 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
 				Log.i(TAG, msg);
 				
 				String message = msg + "\n";
-				
+
+				// This is done to save the displayed messages so a
+				// change in activity can restore them
 				if (connectionService != null) {
 					connectionService.appendStatus(message);
 				}
@@ -100,6 +106,15 @@ public class HeartbeatSimulatorPluginActivity extends Activity {
 			}
     		
     	});
+    	
+    	// Then scroll the view to the bottom
+    	scrollView.post(new Runnable() {
+
+			@Override
+			public void run() {
+				scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+			}
+		});
     }
 
     private class StartConnectionService extends AsyncTask<Void, Void, Boolean> {

@@ -12,7 +12,7 @@ interface IDeviceApplicationService {
     IBluetoothReadCallback callback);
   
   
-  // Reads from a stream of data from the corresponding BT device. This may block
+  // Reads from a stream of data from the corresponding BT device. This may block.
   // Data are sent to the registered callback
   void read(String deviceName);
   

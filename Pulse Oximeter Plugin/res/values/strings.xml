@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pulse Oximeter Plugin</string>
+    <string name="uuid">9612f487-8757-4531-9fb0-b01eeb3686dc</string>
+    <string name="moving_avg_size">5</string>
+    <string name="initial_value">95</string>
+    <string name="acute_cutoff">90</string>
+    <string name="optimal_cutoff">96</string>
+</resources>

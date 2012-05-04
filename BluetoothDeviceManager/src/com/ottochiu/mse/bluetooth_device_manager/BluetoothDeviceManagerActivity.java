@@ -246,14 +246,6 @@ public class BluetoothDeviceManagerActivity extends Activity {
 				status.setText(msg + "\n");
 			}
     	});
-    	
-//		scrollView.post(new Runnable() {
-
-//	        @Override
-//	        public void run() {
-//	        	scrollView.fullScroll(ScrollView.FOCUS_DOWN);
-//	        }
-//	    });
     }
     
     //////////////// BluetoothService /////////////////
@@ -292,8 +284,7 @@ public class BluetoothDeviceManagerActivity extends Activity {
 			Intent intent = new Intent(BluetoothDeviceManagerActivity.this, BluetoothService.class); 
 			startService(intent);
 			
-			boolean isBounded = bindService(intent, 
-	        		connection, Context.BIND_AUTO_CREATE);
+			boolean isBounded = bindService(intent, connection, Context.BIND_AUTO_CREATE);
 		
 			Log.i(TAG, "Bluetooth service started: " + isBounded);
 			

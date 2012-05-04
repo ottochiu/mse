@@ -112,6 +112,8 @@ public class BluetoothService extends Service {
 	
 	private void updateStatus(String msg) {
 		Log.i(TAG, msg);
+		
+		// Send to activity to update GUI status
 		Intent intent = new Intent(ACTION_LOG);
 		intent.putExtra(EXTRA_MESSAGE, msg);
 		sendBroadcast(intent);
@@ -122,6 +124,8 @@ public class BluetoothService extends Service {
 		
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			
+			// Redirect Bluetooth state changes to the GUI for display purposes
 			if (intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
 
 				// Simply rebroadcast status

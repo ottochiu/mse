@@ -63,8 +63,6 @@ public class ConnectionService extends Service {
 	
 	@Override
 	public void onDestroy() {
-		
-		// TODO:
 		if (applicationService != null) {
 			unbindService(connection);
 		}
