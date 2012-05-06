@@ -44,8 +44,6 @@ public class BluetoothService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "Start BluetoothService");
 
-		btAdapter.setName(getString(R.string.app_name));
-		
 		IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(broadcastReceiver, filter);
 		

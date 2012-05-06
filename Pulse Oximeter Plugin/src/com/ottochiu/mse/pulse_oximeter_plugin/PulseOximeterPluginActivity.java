@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 public class PulseOximeterPluginActivity extends Activity {
 	private static final String TAG = "PulseOximeterPlugin";
-	private static final double INVALID_LEVEL = -1;
+	private static final byte INVALID_LEVEL = -1;
 	
 	private MovingAverage movingAverageLevel;
 	private TextView spO2Pct;
@@ -29,7 +29,7 @@ public class PulseOximeterPluginActivity extends Activity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.getAction().equals(ConnectionService.STATUS_UPDATE)) {
-				double level = intent.getDoubleExtra(ConnectionService.STATUS_LEVEL, INVALID_LEVEL);
+				double level = intent.getByteExtra(ConnectionService.STATUS_LEVEL, INVALID_LEVEL);
 				double displayVal = Double.MAX_VALUE;
 				String displayStr = "??";
 				int progress = 0;

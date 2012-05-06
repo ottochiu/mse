@@ -2,11 +2,70 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:gravity="center_horizontal" >
 
-    <TextView
+    <Button
+        android:id="@+id/connectButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20sp"
+        android:text="Connect"
+        android:onClick="connect" />
+
+    <RelativeLayout
+        android:id="@+id/oximeterControl"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/hello" />
+        android:layout_margin="20sp"
+        android:visibility="invisible" >
+    
+	    <TextView
+	        android:id="@+id/textView1"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="@string/spO2Label"
+	        android:textAppearance="?android:attr/textAppearanceLarge" />
 
+	    <TextView
+            android:id="@+id/spO2Level"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/textView1"
+            android:paddingLeft="5sp"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+	    	
+	    <SeekBar
+	        android:id="@+id/seekBar"
+	        android:layout_below="@id/textView1"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_margin="20sp"
+	        android:max="20" /> <!-- Between 85 and 100 -->
+
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignLeft="@id/seekBar"
+	        android:layout_below="@id/seekBar"
+	        android:text="80%"
+	        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+	    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_below="@id/seekBar"
+            android:text="90%"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+	    
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignRight="@id/seekBar"
+            android:layout_below="@id/seekBar"
+            android:text="100%"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+	    
+    </RelativeLayout>
 </LinearLayout>

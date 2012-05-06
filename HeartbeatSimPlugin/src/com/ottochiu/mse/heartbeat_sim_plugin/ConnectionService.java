@@ -55,6 +55,8 @@ public class ConnectionService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		super.onStartCommand(intent, flags, startId);
+		
 		Log.i(TAG, "Started");
 		new RegisterPluginTask().execute();
 		
@@ -63,6 +65,8 @@ public class ConnectionService extends Service {
 	
 	@Override
 	public void onDestroy() {
+		super.onDestroy();
+		
 		if (applicationService != null) {
 			unbindService(connection);
 		}

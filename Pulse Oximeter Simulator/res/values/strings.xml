@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="hello">Hello World, PulseOximeterSimulatorActivity!</string>
     <string name="app_name">Pulse Oximeter Simulator</string>
+    <string name="spO2Label">SpO2% Level:</string>
+    <string name="server_name">Bluetooth Device Manager</string>
+    <string name="uuid">9612f487-8757-4531-9fb0-b01eeb3686dc</string>
+    <string name="period">500</string>
 
 </resources>

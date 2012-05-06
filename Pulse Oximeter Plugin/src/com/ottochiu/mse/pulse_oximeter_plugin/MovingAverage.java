@@ -19,6 +19,7 @@ public class MovingAverage {
 	
 	// Returns the moving average after adding value
 	public double add(double value) {
+		index = (index + 1) % buf.length;
 		runningSum = runningSum - buf[index] + value;
 		buf[index] = value;
 		

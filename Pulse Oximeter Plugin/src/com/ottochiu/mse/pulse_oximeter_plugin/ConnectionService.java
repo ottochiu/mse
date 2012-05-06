@@ -48,6 +48,8 @@ public class ConnectionService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		super.onStartCommand(intent, flags, startId);
+		
 		Log.i(TAG, "Started");
 		new RegisterPluginTask().execute();
 		
@@ -56,7 +58,8 @@ public class ConnectionService extends Service {
 	
 	@Override
 	public void onDestroy() {
-	
+		super.onDestroy();
+		
 		if (applicationService != null) {
 			unbindService(connection);
 		}
@@ -182,7 +185,7 @@ public class ConnectionService extends Service {
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.LITTLE_ENDIAN);
 
-			double level = buf.getDouble();
+			byte level = buf.get();
 			
 			Intent intent = new Intent(STATUS_UPDATE);
 			intent.putExtra(STATUS_LEVEL, level);

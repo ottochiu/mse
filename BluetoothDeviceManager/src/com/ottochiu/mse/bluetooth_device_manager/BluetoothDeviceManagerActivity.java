@@ -317,6 +317,10 @@ public class BluetoothDeviceManagerActivity extends Activity {
 		protected Boolean doInBackground(Void... params) {
 			
 			try {
+				// Make sure the device has the proper name discoverable by clients
+				Log.i(TAG, "Setting Bluetooth device name");
+				BluetoothAdapter.getDefaultAdapter().setName(getString(R.string.app_name));
+				
 				Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
 				startActivity(intent);
 
