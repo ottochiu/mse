@@ -82,6 +82,14 @@ this.write(_arg0, _arg1);
 reply.writeNoException();
 return true;
 }
+case TRANSACTION_getManagerActivityName:
+{
+data.enforceInterface(DESCRIPTOR);
+java.lang.String _result = this.getManagerActivityName();
+reply.writeNoException();
+reply.writeString(_result);
+return true;
+}
 case TRANSACTION_version:
 {
 data.enforceInterface(DESCRIPTOR);
@@ -168,6 +176,25 @@ _reply.recycle();
 _data.recycle();
 }
 }
+// Returns the class name of the Manager activity
+
+public java.lang.String getManagerActivityName() throws android.os.RemoteException
+{
+android.os.Parcel _data = android.os.Parcel.obtain();
+android.os.Parcel _reply = android.os.Parcel.obtain();
+java.lang.String _result;
+try {
+_data.writeInterfaceToken(DESCRIPTOR);
+mRemote.transact(Stub.TRANSACTION_getManagerActivityName, _data, _reply, 0);
+_reply.readException();
+_result = _reply.readString();
+}
+finally {
+_reply.recycle();
+_data.recycle();
+}
+return _result;
+}
 public java.lang.String version() throws android.os.RemoteException
 {
 android.os.Parcel _data = android.os.Parcel.obtain();
@@ -189,7 +216,8 @@ return _result;
 static final int TRANSACTION_registerDevice = (android.os.IBinder.FIRST_CALL_TRANSACTION + 0);
 static final int TRANSACTION_read = (android.os.IBinder.FIRST_CALL_TRANSACTION + 1);
 static final int TRANSACTION_write = (android.os.IBinder.FIRST_CALL_TRANSACTION + 2);
-static final int TRANSACTION_version = (android.os.IBinder.FIRST_CALL_TRANSACTION + 3);
+static final int TRANSACTION_getManagerActivityName = (android.os.IBinder.FIRST_CALL_TRANSACTION + 3);
+static final int TRANSACTION_version = (android.os.IBinder.FIRST_CALL_TRANSACTION + 4);
 }
 public void registerDevice(java.lang.String deviceName, android.os.ParcelUuid uuid, java.lang.String packageName, com.ottochiu.mse.bluetooth_device_manager.IBluetoothReadCallback callback) throws android.os.RemoteException;
 // Reads from a stream of data from the corresponding BT device. This may block.
@@ -199,5 +227,8 @@ public void read(java.lang.String deviceName) throws android.os.RemoteException;
 // Writes data to the BT device corresponding to the caller. This may block.
 
 public void write(java.lang.String deviceName, byte[] data) throws android.os.RemoteException;
+// Returns the class name of the Manager activity
+
+public java.lang.String getManagerActivityName() throws android.os.RemoteException;
 public java.lang.String version() throws android.os.RemoteException;
 }

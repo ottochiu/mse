@@ -19,5 +19,8 @@ interface IDeviceApplicationService {
   // Writes data to the BT device corresponding to the caller. This may block.
   void write(String deviceName, in byte[] data);
   
+  // Returns the class name of the Manager activity
+  String getManagerActivityName();
+  
   String version();
 }

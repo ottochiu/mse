@@ -1,11 +1,7 @@
 package com.ottochiu.mse.pulse_oximeter_plugin;
 
-import java.io.IOException;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -36,9 +32,11 @@ import com.ottochiu.mse.bluetooth_device_manager.IDeviceApplicationService;
 public class ConnectionService extends Service {
 	public static final String STATUS_UPDATE = "com.ottochiu.mse.pulse_oximeter_plugin.STATUS_UPDATE";
 	public static final String STATUS_LEVEL = "com.ottochiu.mse.pulse_oximeter_plugin.STATUS_LEVEL";
+	public static final String STATUS_MANAGER_CONNECTED = "com.ottochiu.mse.pulse_oximeter_plugin.STATUS_MANAGER_CONNECTED";
 	
 	private static final String TAG = "ConnectionService";
 	
+	private ComponentName managerInfo;
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -91,6 +89,9 @@ public class ConnectionService extends Service {
 		return status;
 	}
 
+	ComponentName getManagerComponentName() {
+		return managerInfo;
+	}
 	
 	// private components for use within this service
 	
@@ -137,7 +138,10 @@ public class ConnectionService extends Service {
 	
 	////////////////////////////////////////////
 	// For connection to the DeviceApplicationService
-    
+	boolean isManagerConnected() {
+		return applicationService != null;
+	}
+	
 	private IDeviceApplicationService applicationService;
 	
 	private ServiceConnection connection = new ServiceConnection() {
@@ -157,6 +161,13 @@ public class ConnectionService extends Service {
 	    				ParcelUuid.fromString(getString(R.string.uuid)),
 	    				PulseOximeterPluginActivity.class.getPackage().getName(),
 	    				handler);
+	    		
+	    		managerInfo = new ComponentName(
+	    				IDeviceApplicationService.class.getPackage().getName(), 
+	    				applicationService.getManagerActivityName());
+	    		
+	    		sendBroadcast(new Intent(STATUS_MANAGER_CONNECTED));
+	    		
 	    	} catch (RemoteException e) {
 	    	}
 			

@@ -12,7 +12,7 @@
         android:layout_margin="20sp"
         android:text="Connect"
         android:onClick="connect" />
-
+    
     <RelativeLayout
         android:id="@+id/oximeterControl"
         android:layout_width="fill_parent"

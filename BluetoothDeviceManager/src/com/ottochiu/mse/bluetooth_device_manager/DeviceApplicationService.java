@@ -49,6 +49,13 @@ public class DeviceApplicationService extends Service {
 			return version;
 		}
 
+		  
+		// Returns the class name of the Manager activity
+		@Override
+		public String getManagerActivityName() {
+			return BluetoothDeviceManagerActivity.class.getName();
+		}
+		
 		// This is a blocking call
 		@Override
 		public void read(String deviceName) throws RemoteException {

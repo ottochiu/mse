@@ -156,7 +156,7 @@ public class PulseOximeterSimulatorActivity extends Activity {
     	unbindService(connection);
     }
     
-    
+    // connect/disconnect to Bluetooth device manager
     public void connect(View v) {
     	if (connectionService != null) {
     		if (connectionService.getState() == ConnectionService.STATE_OFFLINE) {

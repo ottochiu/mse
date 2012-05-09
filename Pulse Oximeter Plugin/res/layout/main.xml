@@ -30,4 +30,16 @@
         android:layout_below="@+id/spO2Label"
         android:layout_centerHorizontal="true"
         android:textAppearance="?android:attr/textAppearanceLarge" />
+    
+
+    <Button
+        android:id="@+id/gotoManager"
+        android:visibility="invisible"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10sp"
+        android:layout_below="@id/spO2Pct"
+        android:layout_centerHorizontal="true"
+        android:text="Open Bluetooth Device Manager"
+        android:onClick="gotoManager" />    
 </RelativeLayout>
